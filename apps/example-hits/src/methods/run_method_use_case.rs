@@ -2,14 +2,24 @@ use serde_json::{json, Value};
 
 use super::find_hits_algorithm::find_hits;
 use super::measure_file_use_case::measure_file;
+use super::wait_use_case::wait;
 
 /// Runs a method of this plugin and gives its result, or the reason it failed.
 ///
 /// - `find`: `{ durationMs, everyMs?, lengthMs?, label? }` gives `{ hits: [{ startMs, endMs, label }] }`.
 /// - `size`: `{ audio }` gives the size of the stored file.
-/// - `fail`: always an error. `crash`: ends the program without answering. `hang`: never answers.
-///   The last three exist so a host can test how it copes with a misbehaving plugin.
-pub fn run_method(method: &str, params: &Value) -> Result<Value, String> {
+/// - `sleep`: `{ ms }` waits that long, or ends with the error `cancelled` as soon as the call is
+///   cancelled. `pid` gives the number of the program's process, so a host can tell copies apart.
+/// - `fail`: always an error. `crash`: ends the program without answering. `hang`: never answers
+///   and ignores a cancel. The last three exist so a host can test how it copes with a
+///   misbehaving plugin.
+///
+/// `is_cancelled` says whether the host cancelled this call.
+pub fn run_method(
+    method: &str,
+    params: &Value,
+    is_cancelled: &dyn Fn() -> bool,
+) -> Result<Value, String> {
     match method {
         "find" => {
             let hits = find_hits(
@@ -21,6 +31,8 @@ pub fn run_method(method: &str, params: &Value) -> Result<Value, String> {
             Ok(json!({ "hits": hits }))
         }
         "size" => measure_file(params),
+        "sleep" => wait(params, is_cancelled),
+        "pid" => Ok(json!({ "pid": std::process::id() })),
         "fail" => Err("this plugin always fails".to_string()),
         "crash" => std::process::exit(3),
         "hang" => {
@@ -37,16 +49,16 @@ mod tests {
 
     #[test]
     fn find_uses_defaults_and_unknown_methods_are_errors() {
-        let result = run_method("find", &json!({ "durationMs": 1_200 })).unwrap();
+        let result = run_method("find", &json!({ "durationMs": 1_200 }), &|| false).unwrap();
         assert_eq!(result["hits"].as_array().unwrap().len(), 2);
         assert_eq!(result["hits"][0]["label"], "hit");
 
         assert_eq!(
-            run_method("nope", &json!({})).unwrap_err(),
+            run_method("nope", &json!({}), &|| false).unwrap_err(),
             "no method \"nope\""
         );
         assert_eq!(
-            run_method("fail", &json!({})).unwrap_err(),
+            run_method("fail", &json!({}), &|| false).unwrap_err(),
             "this plugin always fails"
         );
     }

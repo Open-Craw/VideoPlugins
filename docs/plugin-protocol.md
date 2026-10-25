@@ -28,6 +28,9 @@ videocraw run recipes/ --out out/result.json --plugins ~/.videocraw/plugins
 | `effect` | `pure` (same input, same output: may be cached and retried later) or `effectful` (changes something outside). Recorded now, not used yet |
 | `command` | the program and its arguments. A first entry with a path separator is relative to the plugin folder; a bare name is looked up on the system path. The program runs with the plugin folder as its working directory |
 | `timeoutSeconds` | how long one call may take (default 600). After that the plugin is stopped and the video fails |
+| `concurrency` | how many calls the program can work on at the same time (default 1: one at a time). Above 1, the program must be able to read the next message while it works on a call |
+| `processes` | how many copies of the program may be started, each taking `concurrency` calls (default 1). A program that cannot do two things at once still serves parallel work this way |
+| `cancelGraceSeconds` | how long a program gets to answer a cancelled call before it is stopped (default 5) |
 
 Unknown keys are refused. VideoCraw does not install a plugin's runtime or dependencies: the plugin brings its own or documents them.
 
@@ -48,13 +51,20 @@ One JSON object per line. VideoCraw writes to the plugin's standard input and re
 |---|---|---|
 | core to plugin | `{"type":"hello","protocol":1}` | first message |
 | plugin to core | `{"type":"ready","protocol":1}` | the answer, within 30 s |
-| core to plugin | `{"type":"call","id":1,"method":"find","params":{...}}` | one call at a time |
+| core to plugin | `{"type":"call","id":1,"method":"find","params":{...}}` | a call; see Calls in parallel for how many may be in flight |
 | plugin to core | `{"type":"result","id":1,"result":{...}}` | the answer to call 1 |
 | plugin to core | `{"type":"error","id":1,"message":"..."}` | the call failed; the plugin stays up and the video fails |
 | plugin to core | `{"type":"progress","id":1,"message":"..."}` | optional while a call runs; ignored for now |
+| core to plugin | `{"type":"cancel","id":1}` | stop working on call 1; the plugin may answer it with an `error`, and the answer is ignored |
 | core to plugin | `{"type":"shutdown"}` | finish and exit (VideoCraw stops it after 5 s) |
 
 A plugin that times out, exits, or says something the protocol does not allow is stopped; the next call starts a fresh process. Unknown fields in a plugin's messages are ignored, so a newer plugin can say more than VideoCraw understands.
+
+### Calls in parallel
+
+A recipe can run several calls at once (parallel branches, or a `forEach` with several items at a time). The core sends each with its own `id` without waiting for the previous answer, up to `concurrency` calls per program and up to `processes` programs; further calls wait for a free slot. Answers may come in any order: the `id` says which call each belongs to, and a plugin writes each answer as one whole line. A plugin with `concurrency` 1 never sees a second call before it has answered the first.
+
+When a call is cancelled (a sibling branch failed, or the run was stopped) the core sends `cancel` with its `id` and stops waiting at once. A plugin should drop that work promptly; any answer to a cancelled call is ignored. A plugin that has not answered a cancelled call when `cancelGraceSeconds` have passed is not listening: it is stopped, and with it any other call it had in flight, and the next call starts a fresh program. The same happens to a call that runs longer than `timeoutSeconds`.
 
 ### Example exchange
 

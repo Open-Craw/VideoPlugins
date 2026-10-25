@@ -4,5 +4,6 @@
   "protocol": 1,
   "effect": "pure",
   "command": ["../../dist/cargo/release/videoplugins-example-hits"],
-  "timeoutSeconds": 60
+  "timeoutSeconds": 60,
+  "concurrency": 8
 }

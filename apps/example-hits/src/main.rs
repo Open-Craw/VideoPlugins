@@ -7,5 +7,5 @@ mod serve;
 fn main() {
     let input = std::io::stdin();
     let output = std::io::stdout();
-    serve::serve_lines(input.lock(), output.lock());
+    serve::serve_lines(input.lock(), output);
 }
