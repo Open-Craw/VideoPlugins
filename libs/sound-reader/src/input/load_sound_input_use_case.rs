@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use serde_json::Value;
 
 use crate::read::{read_sound, ReadSoundError, Sound};
+use crate::region::read_audio_region;
 use crate::resample::resample;
 
 use super::sound_input_error::SoundInputError;
@@ -12,18 +13,30 @@ const SAMPLE_RATES: std::ops::RangeInclusive<u64> = 4_000..=192_000;
 
 /// Reads the sound an action was given.
 ///
+/// `params.audio` may also be a region VideoCraw decoded for the plugin (see `read_audio_region`).
+///
 /// `params.audio` is a stored file as VideoCraw passes it (an object with the absolute path in
 /// `file`), the sound of a video as `media.open` describes it (also an object with `file`), or just
 /// a path in text. `params.sampleRate`, when there is one, is the rate to listen at: the sound is
 /// resampled to it before anything is measured.
 pub fn load_sound_input(params: &Value) -> Result<Sound, SoundInputError> {
-    let path = audio_path(params)?;
-    let sound = read_sound(&path).map_err(|error| match error {
-        ReadSoundError::Open { .. } => SoundInputError::new(404, error.to_string()),
-        ReadSoundError::Unsupported(_) | ReadSoundError::Decode(_) => {
-            SoundInputError::new(422, error.to_string())
+    let sound = match params
+        .get("audio")
+        .map(read_audio_region)
+        .transpose()?
+        .flatten()
+    {
+        Some(decoded) => decoded,
+        None => {
+            let path = audio_path(params)?;
+            read_sound(&path).map_err(|error| match error {
+                ReadSoundError::Open { .. } => SoundInputError::new(404, error.to_string()),
+                ReadSoundError::Unsupported(_) | ReadSoundError::Decode(_) => {
+                    SoundInputError::new(422, error.to_string())
+                }
+            })?
         }
-    })?;
+    };
 
     match params.get("sampleRate") {
         None | Some(Value::Null) => Ok(sound),

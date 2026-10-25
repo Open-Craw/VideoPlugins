@@ -9,6 +9,7 @@
   "actions": {
     "waveform": {
       "description": "Draws the waves of a sound as an SVG picture, with the stretches you give marked behind them and a time axis under them.",
+      "wants": { "audio": { "media": "audio", "sampleRate": 16000, "channels": 1 } },
       "inputs": {
         "type": "object",
         "properties": {

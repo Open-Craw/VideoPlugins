@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 from ..serve import Failure
 from .sentence_contract import Word
 from .speech_model_store import get_model
@@ -25,7 +27,7 @@ class TranscribeOptions:
 
 
 def transcribe_media(
-    media: Path,
+    media: Path | np.ndarray,
     options: TranscribeOptions,
     cancel: threading.Event,
     load_model: Callable[[str], Any] = get_model,
@@ -33,7 +35,8 @@ def transcribe_media(
     """Gives `{ language, languageProbability, durationMs, model, text, sentences }`.
 
     `sentences` is a list of `{ startMs, endMs, text, confidence }`. A video or sound with no speech
-    in it is a success with no sentences. `load_model` is how a model is got by its name (the
+    in it is a success with no sentences. `media` is a file to decode here, or samples (mono, 16000
+    a second) the core already decoded. `load_model` is how a model is got by its name (the
     recognition itself can be swapped in tests).
     """
     try:
@@ -47,7 +50,7 @@ def transcribe_media(
     words: list[Word] = []
     try:
         segments, info = model.transcribe(
-            str(media),
+            media if isinstance(media, np.ndarray) else str(media),
             language=options.language,
             beam_size=options.beam_size,
             word_timestamps=True,
@@ -61,7 +64,8 @@ def transcribe_media(
     except Failure:
         raise
     except Exception as error:
-        raise Failure.status(422, f"cannot read speech from {media.name}: {error}") from error
+        name = "the audio" if isinstance(media, np.ndarray) else media.name
+        raise Failure.status(422, f"cannot read speech from {name}: {error}") from error
 
     sentences = split_sentences(words)
     return {

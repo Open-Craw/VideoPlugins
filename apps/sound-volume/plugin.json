@@ -9,6 +9,7 @@
   "actions": {
     "map": {
       "description": "How loud the sound is over time: level and peak per window, and the level of the low, mid and high bands.",
+      "wants": { "audio": { "media": "audio", "sampleRate": 44100, "channels": 1 } },
       "inputs": {
         "type": "object",
         "properties": {
@@ -66,6 +67,7 @@
     },
     "silences": {
       "description": "The stretches where the sound stays below a level for at least a time.",
+      "wants": { "audio": { "media": "audio", "sampleRate": 44100, "channels": 1 } },
       "inputs": {
         "type": "object",
         "properties": {

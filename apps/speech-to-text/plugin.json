@@ -10,6 +10,7 @@
   "actions": {
     "transcribe": {
       "description": "Writes down the sentences said in a video or a sound, with the time each starts and ends.",
+      "wants": { "media": { "media": "audio", "sampleRate": 16000, "channels": 1 } },
       "inputs": {
         "type": "object",
         "properties": {

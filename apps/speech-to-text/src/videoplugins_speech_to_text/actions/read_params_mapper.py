@@ -4,6 +4,9 @@ import re
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
+from ..decoded_audio import read_audio_region
 from ..serve import Failure
 from ..transcription.transcribe_media_use_case import TranscribeOptions
 
@@ -11,10 +14,14 @@ _MODEL = re.compile(r"^[A-Za-z0-9_.\-/\\: ]{1,200}$")
 _LANGUAGE = re.compile(r"^[a-z]{2,3}(-[A-Za-z]{2,4})?$")
 
 
-def read_media(params: dict[str, Any]) -> Path:
-    """The file to listen to: `media` as a stored file or a video (an object with an absolute
-    `file`), or a path in text. A file that is not there is a 404."""
+def read_media(params: dict[str, Any]) -> Path | np.ndarray:
+    """What to listen to: the samples VideoCraw decoded (a region), or else the file `media` names,
+    as a stored file or a video (an object with an absolute `file`) or a path in text. A file that
+    is not there is a 404."""
     media = params.get("media")
+    decoded = read_audio_region(media)
+    if decoded is not None:
+        return decoded
     if isinstance(media, str) and media:
         path = Path(media)
     elif isinstance(media, dict) and isinstance(media.get("file"), str):

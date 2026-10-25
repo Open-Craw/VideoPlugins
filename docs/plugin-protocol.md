@@ -72,6 +72,25 @@ What it is used for:
 - **At each call.** The inputs are checked once more as the plugin receives them, stored files with their `file` path included; a call that does not fit fails with the code 400 without reaching the plugin.
 - **For the result.** The plugin decides what it answers. A result that does not match `outputs` is a warning for the author, not a failure.
 
+## Getting the media decoded
+
+A plugin that works on the sound of a video should not carry a decoder. It says in its manifest which of its inputs it wants decoded, and what it wants, under `wants` in the action:
+
+```json
+"wants": { "audio": { "media": "audio", "sampleRate": 16000, "channels": 1 } }
+```
+
+`sampleRate` is from 4000 to 192000 (default 16000) and `channels` is 1 (the average of left and right, the default) or 2. The input is still described by `inputs` as a **flow** gives it (a path, a stored file or a video as `media.open` gives it), and it is checked as such. Just before the call the core decodes it with FFmpeg and replaces it with a description of the decoded sound:
+
+```json
+{ "kind": "audio", "file": "C:/work/out/.videocraw-cache/3f2a….f32le", "format": "f32le",
+  "sampleRate": 16000, "channels": 1, "frames": 833000, "durationMs": 52062, "offsetBytes": 0, "bytes": 3332000 }
+```
+
+The file holds raw little-endian 32-bit float samples, the channels interleaved, from `offsetBytes` on. The plugin opens it read-only or maps it (the operating system then shares the pages with every other process that does) and must not write to it: the core never changes a file once it is there. The core decodes **once** for everyone who asks for the same video, rate and channels, in one run or the next (the cache is keyed by the path, size and modification time of the source, and lives in `.videocraw-cache` in the result folder). The file name is not an identity to keep: it is only valid for the call. The description should be checked against the file before the samples are read (a length that does not fit is a 400).
+
+An input the flow leaves out stays out, and a plugin that lists no `wants` keeps getting files by path. If FFmpeg is not available the call fails with 503; a source with no audio fails with 422. The SDKs read the description for you (`videoplugins-sound-reader` in Rust, `decoded_audio` in the Python plugin), so a plugin does not parse it by hand. Video frames will follow the same way.
+
 ## Using one in a recipe
 
 ```json
