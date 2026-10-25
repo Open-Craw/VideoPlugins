@@ -53,7 +53,7 @@ One JSON object per line. VideoCraw writes to the plugin's standard input and re
 | plugin to core | `{"type":"ready","protocol":1}` | the answer, within 30 s |
 | core to plugin | `{"type":"call","id":1,"method":"find","params":{...}}` | a call; see Calls in parallel for how many may be in flight |
 | plugin to core | `{"type":"result","id":1,"result":{...}}` | the answer to call 1 |
-| plugin to core | `{"type":"error","id":1,"message":"...","code":"QUOTA","retryable":false,"details":{...}}` | the call failed, as the plugin decides; only `message` is required; the plugin stays up |
+| plugin to core | `{"type":"error","id":1,"message":"...","code":429,"retryable":true,"details":{...}}` | the call failed, as the plugin decides; only `message` is required; the plugin stays up |
 | plugin to core | `{"type":"progress","id":1,"message":"..."}` | optional while a call runs; ignored for now |
 | core to plugin | `{"type":"cancel","id":1}` | stop working on call 1; the plugin may answer it with an `error`, and the answer is ignored |
 | core to plugin | `{"type":"shutdown"}` | finish and exit (VideoCraw stops it after 5 s) |
@@ -64,7 +64,13 @@ A plugin that times out, exits, or says something the protocol does not allow is
 
 The plugin decides, and the core never reads a result to find out. Whatever the plugin wraps (a program that crashes, a function that returns nothing, a service that answers HTTP 200 with `"error": true` in the body) is turned into a protocol message by the plugin: an `error` for a failure, a `result` for a success, even when the result is empty. A result is never searched for error flags, and a `null` result is a success unless the plugin sent an `error`. A flow can still look at a successful result and branch on it.
 
-An `error` needs only a `message`. It may also carry a `code` (a short string a flow can test, such as `RATE_LIMITED`), `retryable` (`true` when trying again could work, `false` when it cannot; left out when the plugin does not know) and `details` (anything worth keeping, such as what the wrapped service answered). A plugin that fails keeps running; the next call goes to it as usual.
+An `error` needs only a `message`. It may also carry:
+
+- `code`: what kind of failure it is. **A number means what the HTTP status code of that number means**, so the core and every workflow understand it without knowing the plugin: 400 a parameter is wrong, 401 or 403 not allowed, 404 something asked for is not there (a file, a model, a method), 408 it took too long, 409 conflict, 413 too large, 415 unsupported media, 422 the request is fine but cannot be done, 429 too busy or rate limited, 500 the plugin itself broke, 502 a service behind the plugin answered wrongly or nothing, 503 a service behind the plugin is unavailable, 504 it did not answer in time. **A text is the plugin's own name** for a failure (`MODEL_MISSING`, `QUOTA`), which a workflow can test but the core does not interpret. Use a number when one fits and a name when none does. A success is never reported with a code: it is a `result`.
+- `retryable`: `true` when trying again could work, `false` when it cannot. Leave it out when you do not know: the core then reads the code, taking 408, 429 and every 5xx as worth another try and any other 4xx as not, and a name or no code as saying nothing. What the plugin says wins over the code.
+- `details`: anything worth keeping, such as what the wrapped service answered.
+
+A plugin that fails keeps running; the next call goes to it as usual.
 
 ### Calls in parallel
 

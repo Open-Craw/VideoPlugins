@@ -15,7 +15,7 @@ use super::wait_use_case::wait;
 /// - `interpret`: `{ response }` decides what a service's answer means (see
 ///   `interpret_response`): an answer flagged `error`, a status of 400 or more, or `null` is a
 ///   failure with a code and a retry hint; anything else is the result.
-/// - `fail`: always an error, with the code `ALWAYS_FAILS`. `crash`: ends the program without answering. `hang`: never answers
+/// - `fail`: always an error, with the code `ALWAYS_FAILS` (a name of the plugin's own). `crash`: ends the program without answering. `hang`: never answers
 ///   and ignores a cancel. The last three exist so a host can test how it copes with a
 ///   misbehaving plugin.
 ///
@@ -35,13 +35,13 @@ pub fn run_method(
             );
             Ok(json!({ "hits": hits }))
         }
-        "size" => measure_file(params).map_err(MethodFailure::from),
+        "size" => measure_file(params),
         "sleep" => wait(params, is_cancelled).map_err(MethodFailure::from),
         "interpret" => interpret_response(&params["response"]),
         "pid" => Ok(json!({ "pid": std::process::id() })),
         "fail" => Err(MethodFailure {
             message: "this plugin always fails".to_string(),
-            code: Some("ALWAYS_FAILS".to_string()),
+            code: Some(json!("ALWAYS_FAILS")),
             retryable: Some(false),
             details: None,
         }),
@@ -50,7 +50,7 @@ pub fn run_method(
             std::thread::sleep(std::time::Duration::from_secs(60));
             Ok(json!({}))
         }
-        other => Err(format!("no method {other:?}").into()),
+        other => Err(MethodFailure::status(404, format!("no method {other:?}"))),
     }
 }
 
@@ -72,6 +72,6 @@ mod tests {
         );
         let failure = run_method("fail", &json!({}), &|| false).unwrap_err();
         assert_eq!(failure.message, "this plugin always fails");
-        assert_eq!(failure.code.as_deref(), Some("ALWAYS_FAILS"));
+        assert_eq!(failure.code, Some(json!("ALWAYS_FAILS")));
     }
 }

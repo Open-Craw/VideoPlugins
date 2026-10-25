@@ -5,12 +5,26 @@ use serde_json::Value;
 #[derive(Debug, Clone, PartialEq)]
 pub struct MethodFailure {
     pub message: String,
-    /// A short code a flow can test, such as `RATE_LIMITED`.
-    pub code: Option<String>,
+    /// What kind of failure: a number with the meaning of the HTTP status code of that number
+    /// (400, 404, 429, 503), or a name of the plugin's own (`MODEL_MISSING`).
+    pub code: Option<Value>,
     /// Whether trying again could work.
     pub retryable: Option<bool>,
     /// Anything else worth keeping, such as what the wrapped service answered.
     pub details: Option<Value>,
+}
+
+impl MethodFailure {
+    /// A failure with the meaning of an HTTP status code. The host knows what the standard codes
+    /// mean (whether a retry could work, for one), so nothing more needs saying.
+    pub fn status(code: u16, message: impl Into<String>) -> Self {
+        MethodFailure {
+            message: message.into(),
+            code: Some(Value::from(code)),
+            retryable: None,
+            details: None,
+        }
+    }
 }
 
 impl From<String> for MethodFailure {

@@ -154,16 +154,19 @@ mod tests {
             r#"{"type":"call","id":1,"method":"interpret","params":{"response":{"status":200,"error":true,"code":"QUOTA"}}}"#,
             r#"{"type":"call","id":2,"method":"interpret","params":{"response":{"status":200,"hits":[]}}}"#,
             r#"{"type":"call","id":3,"method":"nope","params":{}}"#,
+            r#"{"type":"call","id":4,"method":"interpret","params":{"response":{"status":429}}}"#,
         ]);
         let flagged = with_id(&replies, 1);
         assert_eq!(flagged["type"], "error");
         assert_eq!(flagged["code"], "QUOTA");
-        assert_eq!(flagged["retryable"], false);
         assert_eq!(flagged["details"]["status"], 200);
         assert_eq!(with_id(&replies, 2)["type"], "result");
-        // A failure that gave nothing more sends only its message.
-        let plain = with_id(&replies, 3);
-        assert!(plain.get("code").is_none() && plain.get("details").is_none());
+        // A numeric code goes out as a number, and a failure that said nothing about retrying
+        // sends no hint: the host works it out from the code.
+        let unknown = with_id(&replies, 3);
+        assert_eq!(unknown["code"], 404);
+        assert!(unknown.get("retryable").is_none() && unknown.get("details").is_none());
+        assert_eq!(with_id(&replies, 4)["code"], 429);
     }
 
     #[test]

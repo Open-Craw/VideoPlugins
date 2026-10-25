@@ -7,11 +7,11 @@ A reference plugin. It pretends to find something in a video, so recipes and hos
 | Method | Params | Result |
 |---|---|---|
 | `find` | `durationMs`, `everyMs` (default 1000), `lengthMs` (default 500), `label` (default `hit`) | `{ "hits": [{ "startMs", "endMs", "label" }] }`, one hit every `everyMs`, the last cut at the end of the video |
-| `size` | `audio`: a stored file as VideoCraw passes it (an object with an absolute `file`) | `{ "bytes": <size of the file> }` |
+| `size` | `audio`: a stored file as VideoCraw passes it (an object with an absolute `file`) | `{ "bytes": <size of the file> }`; a missing parameter is a 400 and a file that is not there a 404 |
 | `sleep` | `ms` | waits that long and answers `{ "waitedMs" }`; answers the error `cancelled` as soon as the call is cancelled |
 | `pid` | none | `{ "pid" }`, the number of the program's process, so a host can tell copies apart |
-| `interpret` | `response`: what a service answered | decides what the answer means, as a plugin must: `"error": true` is a failure even with `"status": 200`, a status of 400 or more is one (429 and 503 can be retried), `null` is one, anything else is the result. A failure carries `code`, `retryable` and the answer as `details` |
-| `fail` | none | always an error, with the code `ALWAYS_FAILS` |
+| `interpret` | `response`: what a service answered | decides what the answer means, as a plugin must: `"error": true` is a failure even with `"status": 200` (code: the service's own name for it, or `SERVICE_ERROR`), a status of 400 or more is one whose code is that status (the host knows 429 and 503 can be retried and 400 cannot), `null` is a 502, anything else is the result. The failure carries the answer as `details` |
+| `fail` | none | always an error, with the name `ALWAYS_FAILS` |
 | `crash` | none | the program exits without answering |
 | `hang` | none | never answers, and ignores a cancel |
 
