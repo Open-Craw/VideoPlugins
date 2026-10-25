@@ -4,10 +4,13 @@
   "name": "videoplugins",
   "image": "mcr.microsoft.com/devcontainers/base:bookworm",
   "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12"
+    },
     "ghcr.io/devcontainers/features/rust:1": {
       "profile": "minimal",
       "version": "1.90"
     }
   },
-  "postCreateCommand": "curl -fsSL https://raw.githubusercontent.com/monosmith-app/monosmith/main/install.sh | sh -s -- \"1.59.0\" && \"$HOME/.local/bin/smith\" ci setup"
+  "postCreateCommand": "curl -fsSL https://raw.githubusercontent.com/monosmith-app/monosmith/main/install.sh | sh -s -- \"1.63.0\" && \"$HOME/.local/bin/smith\" ci setup"
 }

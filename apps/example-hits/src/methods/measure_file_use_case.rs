@@ -1,15 +1,15 @@
 use serde_json::{json, Value};
 
-use super::method_failure_error::MethodFailure;
+use videoplugins_plugin_sdk::Failure;
 
 /// Gives the size in bytes of the stored file passed as `params.audio`: a stored file arrives as an
 /// object with an absolute `file` path the plugin can open.
-pub fn measure_file(params: &Value) -> Result<Value, MethodFailure> {
+pub fn measure_file(params: &Value) -> Result<Value, Failure> {
     let file = params["audio"]["file"]
         .as_str()
-        .ok_or_else(|| MethodFailure::status(400, "audio has no file"))?;
+        .ok_or_else(|| Failure::status(400, "audio has no file"))?;
     let metadata = std::fs::metadata(file)
-        .map_err(|error| MethodFailure::status(404, format!("{file}: {error}")))?;
+        .map_err(|error| Failure::status(404, format!("{file}: {error}")))?;
     Ok(json!({ "bytes": metadata.len() }))
 }
 

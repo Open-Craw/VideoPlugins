@@ -9,3 +9,4 @@ kind = "app"
 
 [dependencies]
 serde_json = "1"
+videoplugins-plugin-sdk = { path = "../../libs/plugin-sdk" }

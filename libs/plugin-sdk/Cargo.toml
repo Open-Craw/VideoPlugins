@@ -1,0 +1,11 @@
+[package]
+name = "videoplugins-plugin-sdk"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata.smith]
+kind = "lib"
+
+[dependencies]
+serde_json = "1"

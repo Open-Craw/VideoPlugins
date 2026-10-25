@@ -3,8 +3,8 @@ use serde_json::{json, Value};
 use super::find_hits_algorithm::find_hits;
 use super::interpret_response_algorithm::interpret_response;
 use super::measure_file_use_case::measure_file;
-use super::method_failure_error::MethodFailure;
 use super::wait_use_case::wait;
+use videoplugins_plugin_sdk::Failure;
 
 /// Runs a method of this plugin and gives its result, or the reason it failed.
 ///
@@ -24,7 +24,7 @@ pub fn run_method(
     method: &str,
     params: &Value,
     is_cancelled: &dyn Fn() -> bool,
-) -> Result<Value, MethodFailure> {
+) -> Result<Value, Failure> {
     match method {
         "find" => {
             let hits = find_hits(
@@ -36,10 +36,10 @@ pub fn run_method(
             Ok(json!({ "hits": hits }))
         }
         "size" => measure_file(params),
-        "sleep" => wait(params, is_cancelled).map_err(MethodFailure::from),
+        "sleep" => wait(params, is_cancelled).map_err(Failure::from),
         "interpret" => interpret_response(&params["response"]),
         "pid" => Ok(json!({ "pid": std::process::id() })),
-        "fail" => Err(MethodFailure {
+        "fail" => Err(Failure {
             message: "this plugin always fails".to_string(),
             code: Some(json!("ALWAYS_FAILS")),
             retryable: Some(false),
@@ -50,7 +50,7 @@ pub fn run_method(
             std::thread::sleep(std::time::Duration::from_secs(60));
             Ok(json!({}))
         }
-        other => Err(MethodFailure::status(404, format!("no method {other:?}"))),
+        other => Err(Failure::status(404, format!("no method {other:?}"))),
     }
 }
 

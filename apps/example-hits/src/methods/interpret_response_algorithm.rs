@@ -1,6 +1,6 @@
 use serde_json::{json, Value};
 
-use super::method_failure_error::MethodFailure;
+use videoplugins_plugin_sdk::Failure;
 
 /// Decides what a wrapped service's answer means. This is the plugin's job: the host never reads a
 /// result to find out whether it failed.
@@ -14,9 +14,9 @@ use super::method_failure_error::MethodFailure;
 /// - Anything else is a success, and the answer is the result.
 ///
 /// A service that says whether a retry could work (`retryable`) is believed over its status.
-pub fn interpret_response(response: &Value) -> Result<Value, MethodFailure> {
+pub fn interpret_response(response: &Value) -> Result<Value, Failure> {
     if response.is_null() {
-        return Err(MethodFailure::status(502, "the service answered nothing"));
+        return Err(Failure::status(502, "the service answered nothing"));
     }
     let status = response["status"].as_u64().unwrap_or(200);
     let flagged = response["error"].as_bool().unwrap_or(false);
@@ -29,7 +29,7 @@ pub fn interpret_response(response: &Value) -> Result<Value, MethodFailure> {
         None if status >= 400 => json!(status),
         None => json!("SERVICE_ERROR"),
     };
-    Err(MethodFailure {
+    Err(Failure {
         message: response["message"]
             .as_str()
             .map_or_else(|| format!("the service answered {status}"), str::to_string),

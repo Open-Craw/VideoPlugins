@@ -96,6 +96,14 @@ name = "videoplugins-example-hits"
 version = "0.0.0"
 dependencies = [
  "serde_json",
+ "videoplugins-plugin-sdk",
+]
+
+[[package]]
+name = "videoplugins-plugin-sdk"
+version = "0.0.0"
+dependencies = [
+ "serde_json",
 ]
 
 [[package]]

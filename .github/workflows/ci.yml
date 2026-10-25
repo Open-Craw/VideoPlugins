@@ -23,6 +23,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: '1.90'
@@ -34,10 +37,17 @@ jobs:
           key: smith-cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             smith-cargo-${{ runner.os }}-
+      - name: Cache the pip download store
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: smith-pip-${{ runner.os }}-${{ hashFiles('requirements-dev.txt', 'apps/speech-to-text/pyproject.toml') }}
+          restore-keys: |
+            smith-pip-${{ runner.os }}-
       - name: Install smith
         run: curl -fsSL https://raw.githubusercontent.com/monosmith-app/monosmith/main/install.sh | sh -s -- "$SMITH_VERSION"
         env:
-          SMITH_VERSION: 1.59.0
+          SMITH_VERSION: 1.63.0
           GITHUB_TOKEN: ${{ github.token }}
       # smith:slot before-setup
       # smith:slot-end before-setup
@@ -54,6 +64,15 @@ jobs:
         run: smith release --dry-run --comment
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pack
+        if: github.event_name == 'push' && github.ref_name == 'main'
+        run: smith ci pack
+      - uses: actions/upload-artifact@v7
+        if: github.event_name == 'push' && github.ref_name == 'main'
+        with:
+          name: drop
+          path: dist/drop
+          if-no-files-found: ignore
       - name: Release
         if: github.event_name == 'push' && github.ref_name == 'main'
         run: smith ci release
