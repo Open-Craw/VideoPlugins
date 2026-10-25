@@ -59,7 +59,20 @@ fn answer_call(call: &Value, cancelled: &Arc<Mutex<HashSet<u64>>>) -> Value {
     let method = call["method"].as_str().unwrap_or_default();
     match run_method(method, &call["params"], &is_cancelled) {
         Ok(result) => json!({ "type": "result", "id": id, "result": result }),
-        Err(message) => json!({ "type": "error", "id": id, "message": message }),
+        Err(failure) => {
+            let mut reply = json!({ "type": "error", "id": id, "message": failure.message });
+            // Only what the method said: the host treats the rest as not given.
+            if let Some(code) = failure.code {
+                reply["code"] = json!(code);
+            }
+            if let Some(retryable) = failure.retryable {
+                reply["retryable"] = json!(retryable);
+            }
+            if let Some(details) = failure.details {
+                reply["details"] = details;
+            }
+            reply
+        }
     }
 }
 
@@ -133,6 +146,24 @@ mod tests {
         ]);
         assert_eq!(with_id(&replies, 1)["type"], "error");
         assert_eq!(with_id(&replies, 2)["type"], "result");
+    }
+
+    #[test]
+    fn an_error_carries_the_code_the_retry_hint_and_the_details_the_method_gave() {
+        let replies = talk(&[
+            r#"{"type":"call","id":1,"method":"interpret","params":{"response":{"status":200,"error":true,"code":"QUOTA"}}}"#,
+            r#"{"type":"call","id":2,"method":"interpret","params":{"response":{"status":200,"hits":[]}}}"#,
+            r#"{"type":"call","id":3,"method":"nope","params":{}}"#,
+        ]);
+        let flagged = with_id(&replies, 1);
+        assert_eq!(flagged["type"], "error");
+        assert_eq!(flagged["code"], "QUOTA");
+        assert_eq!(flagged["retryable"], false);
+        assert_eq!(flagged["details"]["status"], 200);
+        assert_eq!(with_id(&replies, 2)["type"], "result");
+        // A failure that gave nothing more sends only its message.
+        let plain = with_id(&replies, 3);
+        assert!(plain.get("code").is_none() && plain.get("details").is_none());
     }
 
     #[test]

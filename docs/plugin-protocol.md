@@ -53,12 +53,18 @@ One JSON object per line. VideoCraw writes to the plugin's standard input and re
 | plugin to core | `{"type":"ready","protocol":1}` | the answer, within 30 s |
 | core to plugin | `{"type":"call","id":1,"method":"find","params":{...}}` | a call; see Calls in parallel for how many may be in flight |
 | plugin to core | `{"type":"result","id":1,"result":{...}}` | the answer to call 1 |
-| plugin to core | `{"type":"error","id":1,"message":"..."}` | the call failed; the plugin stays up and the video fails |
+| plugin to core | `{"type":"error","id":1,"message":"...","code":"QUOTA","retryable":false,"details":{...}}` | the call failed, as the plugin decides; only `message` is required; the plugin stays up |
 | plugin to core | `{"type":"progress","id":1,"message":"..."}` | optional while a call runs; ignored for now |
 | core to plugin | `{"type":"cancel","id":1}` | stop working on call 1; the plugin may answer it with an `error`, and the answer is ignored |
 | core to plugin | `{"type":"shutdown"}` | finish and exit (VideoCraw stops it after 5 s) |
 
 A plugin that times out, exits, or says something the protocol does not allow is stopped; the next call starts a fresh process. Unknown fields in a plugin's messages are ignored, so a newer plugin can say more than VideoCraw understands.
+
+### What a failure is
+
+The plugin decides, and the core never reads a result to find out. Whatever the plugin wraps (a program that crashes, a function that returns nothing, a service that answers HTTP 200 with `"error": true` in the body) is turned into a protocol message by the plugin: an `error` for a failure, a `result` for a success, even when the result is empty. A result is never searched for error flags, and a `null` result is a success unless the plugin sent an `error`. A flow can still look at a successful result and branch on it.
+
+An `error` needs only a `message`. It may also carry a `code` (a short string a flow can test, such as `RATE_LIMITED`), `retryable` (`true` when trying again could work, `false` when it cannot; left out when the plugin does not know) and `details` (anything worth keeping, such as what the wrapped service answered). A plugin that fails keeps running; the next call goes to it as usual.
 
 ### Calls in parallel
 

@@ -10,7 +10,8 @@ A reference plugin. It pretends to find something in a video, so recipes and hos
 | `size` | `audio`: a stored file as VideoCraw passes it (an object with an absolute `file`) | `{ "bytes": <size of the file> }` |
 | `sleep` | `ms` | waits that long and answers `{ "waitedMs" }`; answers the error `cancelled` as soon as the call is cancelled |
 | `pid` | none | `{ "pid" }`, the number of the program's process, so a host can tell copies apart |
-| `fail` | none | always an error |
+| `interpret` | `response`: what a service answered | decides what the answer means, as a plugin must: `"error": true` is a failure even with `"status": 200`, a status of 400 or more is one (429 and 503 can be retried), `null` is one, anything else is the result. A failure carries `code`, `retryable` and the answer as `details` |
+| `fail` | none | always an error, with the code `ALWAYS_FAILS` |
 | `crash` | none | the program exits without answering |
 | `hang` | none | never answers, and ignores a cancel |
 

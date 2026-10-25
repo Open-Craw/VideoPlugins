@@ -1,7 +1,9 @@
 use serde_json::{json, Value};
 
 use super::find_hits_algorithm::find_hits;
+use super::interpret_response_algorithm::interpret_response;
 use super::measure_file_use_case::measure_file;
+use super::method_failure_error::MethodFailure;
 use super::wait_use_case::wait;
 
 /// Runs a method of this plugin and gives its result, or the reason it failed.
@@ -10,7 +12,10 @@ use super::wait_use_case::wait;
 /// - `size`: `{ audio }` gives the size of the stored file.
 /// - `sleep`: `{ ms }` waits that long, or ends with the error `cancelled` as soon as the call is
 ///   cancelled. `pid` gives the number of the program's process, so a host can tell copies apart.
-/// - `fail`: always an error. `crash`: ends the program without answering. `hang`: never answers
+/// - `interpret`: `{ response }` decides what a service's answer means (see
+///   `interpret_response`): an answer flagged `error`, a status of 400 or more, or `null` is a
+///   failure with a code and a retry hint; anything else is the result.
+/// - `fail`: always an error, with the code `ALWAYS_FAILS`. `crash`: ends the program without answering. `hang`: never answers
 ///   and ignores a cancel. The last three exist so a host can test how it copes with a
 ///   misbehaving plugin.
 ///
@@ -19,7 +24,7 @@ pub fn run_method(
     method: &str,
     params: &Value,
     is_cancelled: &dyn Fn() -> bool,
-) -> Result<Value, String> {
+) -> Result<Value, MethodFailure> {
     match method {
         "find" => {
             let hits = find_hits(
@@ -30,16 +35,22 @@ pub fn run_method(
             );
             Ok(json!({ "hits": hits }))
         }
-        "size" => measure_file(params),
-        "sleep" => wait(params, is_cancelled),
+        "size" => measure_file(params).map_err(MethodFailure::from),
+        "sleep" => wait(params, is_cancelled).map_err(MethodFailure::from),
+        "interpret" => interpret_response(&params["response"]),
         "pid" => Ok(json!({ "pid": std::process::id() })),
-        "fail" => Err("this plugin always fails".to_string()),
+        "fail" => Err(MethodFailure {
+            message: "this plugin always fails".to_string(),
+            code: Some("ALWAYS_FAILS".to_string()),
+            retryable: Some(false),
+            details: None,
+        }),
         "crash" => std::process::exit(3),
         "hang" => {
             std::thread::sleep(std::time::Duration::from_secs(60));
             Ok(json!({}))
         }
-        other => Err(format!("no method {other:?}")),
+        other => Err(format!("no method {other:?}").into()),
     }
 }
 
@@ -54,12 +65,13 @@ mod tests {
         assert_eq!(result["hits"][0]["label"], "hit");
 
         assert_eq!(
-            run_method("nope", &json!({}), &|| false).unwrap_err(),
+            run_method("nope", &json!({}), &|| false)
+                .unwrap_err()
+                .message,
             "no method \"nope\""
         );
-        assert_eq!(
-            run_method("fail", &json!({}), &|| false).unwrap_err(),
-            "this plugin always fails"
-        );
+        let failure = run_method("fail", &json!({}), &|| false).unwrap_err();
+        assert_eq!(failure.message, "this plugin always fails");
+        assert_eq!(failure.code.as_deref(), Some("ALWAYS_FAILS"));
     }
 }
