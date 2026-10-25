@@ -17,6 +17,10 @@ A reference plugin. It pretends to find something in a video, so recipes and hos
 
 `crash`, `hang` and `fail` exist so a host can test how it copes with a plugin that misbehaves. Every call runs on its own thread, so the plugin takes as many calls at once as the host sends: its `plugin.json` can declare a `concurrency` above 1.
 
+## The manifest
+
+[plugin.json](plugin.json) describes every action with input and output schemas and the failures it reports (`actions`): copy the shape for your own. The tests of VideoCraw check that what this program really gives fits what the manifest says.
+
 ## Build and use
 
 ```sh

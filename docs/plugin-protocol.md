@@ -34,6 +34,44 @@ videocraw run recipes/ --out out/result.json --plugins ~/.videocraw/plugins
 
 Unknown keys are refused. VideoCraw does not install a plugin's runtime or dependencies: the plugin brings its own or documents them.
 
+## Describing the actions
+
+A plugin can say what each of its actions takes and gives. It is optional, and worth doing: a flow that uses the plugin is then checked before anything runs, and an editor, an SDK or a test can use the same description.
+
+```json
+"actions": {
+  "find": {
+    "description": "Finds cats in an audio file.",
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "audio": { "type": "object", "description": "A stored file; it carries an absolute file path." },
+        "minConfidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "required": ["audio"],
+      "additionalProperties": false
+    },
+    "outputs": {
+      "type": "object",
+      "properties": { "hits": { "type": "array", "items": { "type": "object", "properties": {
+        "startMs": { "type": "integer" }, "endMs": { "type": "integer" }, "label": { "type": "string" } } } } }
+    },
+    "failures": [
+      { "code": 404, "description": "The audio file is not there." },
+      { "code": "MODEL_MISSING", "description": "The model has not been downloaded." }
+    ]
+  }
+}
+```
+
+`inputs` and `outputs` are schemas in a subset of JSON Schema: `type` (`null`, `boolean`, `string`, `number`, `integer`, `array`, `object`, or a list of them), `enum`, `properties`, `required`, `additionalProperties` (true, false or a schema), `items`, `minimum`, `maximum`, `minLength`, `maxLength`, `minItems` and `maxItems`. Other keywords such as `description` or `default` are allowed and not enforced. The manifest is refused when a schema is malformed (a misspelt type, a `required` name that is not among the properties). `inputs` must describe an object. `failures` lists the failures worth knowing about, with the same codes as the `error` message, so a flow can handle them.
+
+What it is used for:
+
+- **Before a run.** A flow calls the action as `plugin-name.action`. The loader checks that the action exists, that the inputs fit (required ones given, nothing the schema forbids, values of the right type) and, for an input that is an expression, the type of what it reads when that can be told (a property of another action's declared output, a parameter, a text function). It also checks every read of an action's output: the properties `outputs` lists are taken to be all of them, so `@body('Find').hitz` is found before any video is touched. Say `"additionalProperties": true` to say there are more.
+- **At each call.** The inputs are checked once more as the plugin receives them, stored files with their `file` path included; a call that does not fit fails with the code 400 without reaching the plugin.
+- **For the result.** The plugin decides what it answers. A result that does not match `outputs` is a warning for the author, not a failure.
+
 ## Using one in a recipe
 
 ```json

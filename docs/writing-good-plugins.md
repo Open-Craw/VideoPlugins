@@ -41,6 +41,7 @@ An SDK makes the protocol easy to get right: it reads and writes the lines, flus
 
 ## Make it easy to use
 
+- **Describe your actions in the manifest** (`actions`, with input and output schemas and the failures you report). Flows that use your plugin are then checked before they run, and a typo in what they read from your output is found for them. List the output properties you really give; if you leave some open, say `additionalProperties: true`.
 - **Document every method** in the README: parameters, result shape, failure codes, what it needs installed, how long a typical call takes.
 - **Version it** (`version` in `plugin.json`) and say what changed.
 - **Name things for what they find**, not how: `cat-sounds.find`, not `onnx-model-3.run`.
