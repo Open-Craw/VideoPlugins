@@ -5,10 +5,13 @@ use std::sync::Arc;
 /// cancelled the call (a long action looks at it now and then and stops early; answering a
 /// cancelled call is optional, and the host ignores the answer), and it lets the action say it is
 /// alive with [`Cancel::progress`].
+/// What an action calls to say it is alive.
+type ProgressSender = Arc<dyn Fn(&str) + Send + Sync>;
+
 #[derive(Clone, Default)]
 pub struct Cancel {
     flag: Arc<AtomicBool>,
-    progress: Option<Arc<dyn Fn(&str) + Send + Sync>>,
+    progress: Option<ProgressSender>,
 }
 
 impl std::fmt::Debug for Cancel {

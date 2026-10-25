@@ -193,4 +193,4 @@ core   -> {"type":"shutdown"}
 
 ## Not in this slice
 
-From the discussion in #5 and #6, still to do: shared-memory regions and writable regions for large data, host services (the plugin asking VideoCraw for frames or clips), typed ports and the check that a step's output fits the next input, sockets and WebSocket as transports, permissions and signing, install and update commands, and caching of `pure` plugins.
+Still to do: a place where a plugin writes media for the next plugin (a cleaned sound, a mask), host services (the plugin asking the host for frames or clips while it works), checkpoints between the windows of a media for plugins that keep state, typed ports and the check that a step's output fits the next input, sockets and WebSocket as transports, permissions and signing, and install and update commands.
