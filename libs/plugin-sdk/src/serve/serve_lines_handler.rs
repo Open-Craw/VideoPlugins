@@ -10,7 +10,7 @@ use super::cancel_token_model::Cancel;
 use super::failure_error::Failure;
 
 /// The protocol version this SDK speaks.
-const PROTOCOL: u64 = 1;
+const PROTOCOL: u64 = 2;
 
 /// What a plugin is: a function of the action called, its params and a way to learn it was cancelled.
 pub trait Handler:
@@ -50,13 +50,22 @@ pub fn serve_lines(
         };
         match message["type"].as_str() {
             Some("hello") => {
-                if !send(&output, &json!({ "type": "ready", "protocol": PROTOCOL })) {
+                if !send(&output, &ready()) {
                     return;
                 }
             }
             Some("call") => {
                 // Registered here, in message order, so a cancel that follows cannot be missed.
-                let cancel = Cancel::default();
+                let id = message["id"].clone();
+                let cancel = {
+                    let output = Arc::clone(&output);
+                    Cancel::with_progress(move |note| {
+                        send(
+                            &output,
+                            &json!({ "type": "progress", "id": id, "message": note }),
+                        );
+                    })
+                };
                 if let Some(id) = message["id"].as_u64() {
                     lock(&running).insert(id, cancel.clone());
                 }
@@ -88,6 +97,16 @@ pub fn serve_lines(
     for call in calls {
         let _ = call.join();
     }
+}
+
+/// The answer to `hello`: the protocol and what the SDK can do for a plugin, which is to read the
+/// sound and the pictures the host decodes (`wants`) and to say a call is alive (`progress`).
+fn ready() -> Value {
+    json!({
+        "type": "ready",
+        "protocol": PROTOCOL,
+        "capabilities": { "wants": { "media": ["audio", "video"] }, "progress": {} }
+    })
 }
 
 fn answer(call: &Value, cancel: &Cancel, handler: &impl Handler) -> Value {
@@ -166,6 +185,10 @@ mod tests {
                 }
                 Ok(json!({ "slept": true }))
             }
+            "progress" => {
+                cancel.progress("half way");
+                Ok(json!({ "done": true }))
+            }
             "panic" => panic!("on purpose"),
             other => Err(Failure::status(404, format!("no action {other:?}"))),
         }
@@ -190,10 +213,13 @@ mod tests {
     #[test]
     fn answers_hello_with_ready_and_a_call_with_its_result_under_the_same_id() {
         let replies = talk(&[
-            r#"{"type":"hello","protocol":1}"#,
+            r#"{"type":"hello","protocol":2,"capabilities":{}}"#,
             r#"{"type":"call","id":7,"method":"echo","params":{"a":1}}"#,
         ]);
-        assert_eq!(replies[0], json!({ "type": "ready", "protocol": 1 }));
+        assert_eq!(replies[0]["type"], "ready");
+        assert_eq!(replies[0]["protocol"], 2);
+        assert!(replies[0]["capabilities"]["wants"].is_object());
+        assert!(replies[0]["capabilities"]["progress"].is_object());
         assert_eq!(
             replies[1],
             json!({ "type": "result", "id": 7, "result": { "a": 1 } })
@@ -213,6 +239,20 @@ mod tests {
         );
         assert_eq!(with_id(&replies, 2)["type"], "result");
         assert_eq!(with_id(&replies, 3)["code"], 404);
+    }
+
+    #[test]
+    fn an_action_can_say_it_is_alive_and_the_message_carries_the_call_id() {
+        let replies = talk(&[r#"{"type":"call","id":4,"method":"progress","params":{}}"#]);
+        let progress = replies
+            .iter()
+            .find(|reply| reply["type"] == "progress")
+            .expect("a progress message");
+        assert_eq!(progress["id"], 4);
+        assert_eq!(progress["message"], "half way");
+        assert!(replies
+            .iter()
+            .any(|reply| reply["type"] == "result" && reply["id"] == 4));
     }
 
     #[test]
@@ -254,7 +294,7 @@ mod tests {
             "not json",
             r#"{"type":"mystery"}"#,
             r#"{"type":"shutdown"}"#,
-            r#"{"type":"hello","protocol":1}"#,
+            r#"{"type":"hello","protocol":2}"#,
         ]);
         assert!(replies.is_empty());
     }

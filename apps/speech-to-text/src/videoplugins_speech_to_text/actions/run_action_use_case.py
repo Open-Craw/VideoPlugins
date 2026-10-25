@@ -15,5 +15,6 @@ def run_action(action: str, params: dict[str, Any], cancel: threading.Event) -> 
     `skipSilence` (default false) and `beamSize` (default 5).
     """
     if action == "transcribe":
-        return transcribe_media(read_media(params), read_options(params), cancel)
+        media, offset_ms = read_media(params)
+        return transcribe_media(media, read_options(params), cancel, offset_ms=offset_ms)
     raise Failure.status(404, f"this plugin has no action {action!r} (it has transcribe)")

@@ -57,6 +57,7 @@ pub fn load_sound_input(params: &Value) -> Result<Sound, SoundInputError> {
             Ok(Sound {
                 samples: resample(&sound.samples, sound.sample_rate, rate),
                 sample_rate: rate,
+                start_ms: sound.start_ms,
             })
         }
     }

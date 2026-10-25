@@ -88,6 +88,7 @@ pub fn read_sound(path: &Path) -> Result<Sound, ReadSoundError> {
     Ok(Sound {
         samples,
         sample_rate,
+        start_ms: 0,
     })
 }
 

@@ -52,6 +52,19 @@ SPEECH = [
 ]
 
 
+def test_a_stretch_cut_out_of_the_source_gives_times_in_the_source() -> None:
+    model = FakeModel(SPEECH)
+    result = transcribe_media(
+        Path("talk.mp4"),
+        TranscribeOptions(),
+        threading.Event(),
+        lambda _name: model,
+        offset_ms=60_000,
+    )
+    assert result["sentences"][0]["startMs"] == 60_200
+    assert result["sentences"][1]["endMs"] == 63_000
+
+
 def test_gives_the_language_the_length_and_the_sentences_with_their_times() -> None:
     model = FakeModel(SPEECH)
     result = transcribe_media(

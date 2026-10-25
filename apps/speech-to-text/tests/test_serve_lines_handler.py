@@ -3,7 +3,7 @@ import threading
 import time
 from typing import Any
 
-from videoplugins_speech_to_text.serve import Failure, serve_lines
+from videoplugins_speech_to_text.serve import Call, Failure, serve_lines
 
 
 def plugin(action: str, params: dict[str, Any], cancel: threading.Event) -> dict[str, Any]:
@@ -12,6 +12,10 @@ def plugin(action: str, params: dict[str, Any], cancel: threading.Event) -> dict
         return params
     if action == "fail":
         raise Failure("busy", code=429, details={"after": 1})
+    if action == "ping":
+        assert isinstance(cancel, Call)
+        cancel.progress("half way")
+        return {"pinged": True}
     if action == "bug":
         raise ValueError("on purpose")
     if action == "sleep":
@@ -39,12 +43,23 @@ def with_id(replies: list[dict[str, Any]], call_id: int) -> dict[str, Any]:
     return next(reply for reply in replies if reply.get("id") == call_id)
 
 
+def test_an_action_can_say_it_is_alive_and_the_message_carries_the_call_id() -> None:
+    replies = talk('{"type":"call","id":4,"method":"ping","params":{}}')
+    progress = next(reply for reply in replies if reply["type"] == "progress")
+    assert progress["id"] == 4
+    assert progress["message"] == "half way"
+    assert any(reply["type"] == "result" and reply["id"] == 4 for reply in replies)
+
+
 def test_answers_hello_with_ready_and_a_call_with_its_result_under_the_same_id() -> None:
     replies = talk(
-        '{"type":"hello","protocol":1}',
+        '{"type":"hello","protocol":2,"capabilities":{}}',
         '{"type":"call","id":7,"method":"echo","params":{"a":"Olá"}}',
     )
-    assert replies[0] == {"type": "ready", "protocol": 1}
+    assert replies[0]["type"] == "ready"
+    assert replies[0]["protocol"] == 2
+    assert replies[0]["capabilities"]["progress"] == {}
+    assert "wants" in replies[0]["capabilities"]
     assert replies[1] == {"type": "result", "id": 7, "result": {"a": "Olá"}}
 
 
@@ -96,7 +111,7 @@ def test_stops_at_shutdown_and_skips_what_it_does_not_understand() -> None:
         "[1, 2]",
         '{"type":"mystery"}',
         '{"type":"shutdown"}',
-        '{"type":"hello","protocol":1}',
+        '{"type":"hello","protocol":2,"capabilities":{}}',
     )
     assert replies == []
 

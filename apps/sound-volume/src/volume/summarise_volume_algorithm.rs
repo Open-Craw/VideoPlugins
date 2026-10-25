@@ -40,6 +40,7 @@ mod tests {
         let sound = Sound {
             samples: vec![0.5, -0.5, 0.5, -0.5],
             sample_rate: 8_000,
+            start_ms: 0,
         };
         let summary = summarise_volume(
             &sound,
@@ -60,6 +61,7 @@ mod tests {
             &Sound {
                 samples: vec![0.0],
                 sample_rate: 8_000,
+                start_ms: 0,
             },
             &[],
         );

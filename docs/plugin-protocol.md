@@ -1,10 +1,10 @@
 # Plugin protocol
 
-A plugin is a separate program that finds something in the media (or delivers a result). VideoCraw never runs plugin code inside itself: it starts the program when a recipe calls it, talks to it in JSON lines, and stops it when the run ends. A plugin can be written in any language. This page is protocol version **1**, the first slice.
+A plugin is a separate program that finds something in the media (or delivers a result). VideoCraw never runs plugin code inside itself: it starts the program when a recipe calls it, talks to it in JSON lines, and stops it when the run ends. A plugin can be written in any language. This page is protocol version **2**.
 
 ## Installing
 
-A plugin is a folder with a `plugin.json`. VideoCraw is given a folder that holds plugin folders, or one plugin's folder, with `--plugins` (as often as needed):
+A plugin is a folder with a `plugin.json`. Give the command line a folder that holds plugin folders, or one plugin's folder, with `--plugins` (as often as needed):
 
 ```sh
 videocraw run recipes/ --out out/result.json --plugins ~/.videocraw/plugins
@@ -14,7 +14,7 @@ videocraw run recipes/ --out out/result.json --plugins ~/.videocraw/plugins
 {
   "name": "cat-sounds",
   "version": "0.1.0",
-  "protocol": 1,
+  "protocol": 2,
   "effect": "pure",
   "command": ["python", "main.py"],
   "timeoutSeconds": 600
@@ -30,6 +30,8 @@ videocraw run recipes/ --out out/result.json --plugins ~/.videocraw/plugins
 | `timeoutSeconds` | how long one call may take (default 600). After that the plugin is stopped and the video fails |
 | `concurrency` | how many calls the program can work on at the same time (default 1: one at a time). Above 1, the program must be able to read the next message while it works on a call |
 | `processes` | how many copies of the program may be started, each taking `concurrency` calls (default 1). A program that cannot do two things at once still serves parallel work this way |
+| `requirements` | optional: what the plugin's actions need while they work, `{ "cpu": 1, "gpu": 0, "memoryMb": 0, "maxForks": n }`; an action's own `requirements` win (see Resources) |
+| `stallSeconds` | optional: how long a call may go without a `progress` message before the program is stopped and the call times out (408); without it only `timeoutSeconds` limits a call |
 | `cancelGraceSeconds` | how long a program gets to answer a cancelled call before it is stopped (default 5) |
 
 Unknown keys are refused. VideoCraw does not install a plugin's runtime or dependencies: the plugin brings its own or documents them.
@@ -72,6 +74,24 @@ What it is used for:
 - **At each call.** The inputs are checked once more as the plugin receives them, stored files with their `file` path included; a call that does not fit fails with the code 400 without reaching the plugin.
 - **For the result.** The plugin decides what it answers. A result that does not match `outputs` is a warning for the author, not a failure.
 
+## Resources
+
+A run has a budget it may use at the same moment: cores (`--cpu-slots`, default 8, the limit on actions at once that VideoCraw always had), GPU slots (`--gpu-slots`, default 1) and memory (`--memory-mb`, default: not counted). An action of a plugin takes what its `requirements` say while it works: `cpu` (default 1), `gpu` (default 0), `memoryMb` (default 0, not counted) and `maxForks`, the most calls of that plugin working at once whatever the action. It starts when its needs fit what is left and waits otherwise; the wait shows as `waitedMs` in the trace. `requirements` can be set for the whole plugin and for one action, which wins. An action that asks for more than the whole budget still runs, alone. The actions of VideoCraw take one core each. This is on top of `concurrency` and `processes`, which say what the program itself can take.
+
+## Running in windows
+
+An action can say that it may be run a stretch of the media at a time, and VideoCraw then cuts the media, runs the action on each stretch (two at a time) and joins what they found. That bounds the memory and the disk by a window and not by the length of the media, and lets the next window be decoded while the first is being worked on. It is said in the manifest, per action, next to `wants` (which must name exactly one input, the media):
+
+```json
+"window": { "minMs": 10000, "maxMs": 60000, "overlapMs": 2000, "itemsAt": "segments", "drop": ["text"] }
+```
+
+- `itemsAt` is where the **list of items** is in the action's result (a dotted path). Each item has its start and end in the time of the **source**, in milliseconds, under `startMs` and `endMs` (`start` and `end` name other fields). The plugin gets a description of the decoded stretch (`startMs`, `endMs`) and answers in the time of the source.
+- `minMs` and `maxMs` are the shortest and longest window the action works well on; VideoCraw aims for a minute, less when the decoded media is heavy (256 MB at most), and stays inside them. `overlapMs` is how far each window reaches past its core on both sides: make it at least the longest item the action finds, so the window that owns an item has seen all of it. An item belongs to the window whose core holds its middle, so one that two windows saw is kept once.
+- The result the flow reads is the first window's result with the joined items at `itemsAt`. Fields that describe the whole media can be put back: `"joinText": { "field": "text", "from": "text", "separator": " " }` rebuilds the text of everything said from the `text` of each joined item, and `"durationAt": "durationMs"` sets the duration of the whole source. Fields that cannot be rebuilt are named in `drop` and left out. All the other fields (the language found, the model used) are the first window's. An action that does not fit this (it gives one value for the whole media, or needs to see it all) says nothing, or `"window": "none"`, and runs on the whole media.
+
+Failures keep their code: a window that fails with a 429 makes the action fail with a 429, and `retryPolicy` and `timeout` apply to each window's call.
+
 ## Getting the media decoded
 
 A plugin that works on the sound of a video should not carry a decoder. It says in its manifest which of its inputs it wants decoded, and what it wants, under `wants` in the action:
@@ -80,16 +100,36 @@ A plugin that works on the sound of a video should not carry a decoder. It says 
 "wants": { "audio": { "media": "audio", "sampleRate": 16000, "channels": 1 } }
 ```
 
-`sampleRate` is from 4000 to 192000 (default 16000) and `channels` is 1 (the average of left and right, the default) or 2. The input is still described by `inputs` as a **flow** gives it (a path, a stored file or a video as `media.open` gives it), and it is checked as such. Just before the call the core decodes it with FFmpeg and replaces it with a description of the decoded sound:
+`sampleRate` is from 4000 to 192000 (default 16000) and `channels` is 1 (the average of left and right, the default) or 2. The input is still described by `inputs` as a **flow** gives it (a path, a stored file or a video as `media.open` gives it), and it is checked as such. Just before the call VideoCraw decodes it with FFmpeg and replaces it with a description of the decoded sound:
 
 ```json
 { "kind": "audio", "file": "C:/work/out/.videocraw-cache/3f2a….f32le", "format": "f32le",
-  "sampleRate": 16000, "channels": 1, "frames": 833000, "durationMs": 52062, "offsetBytes": 0, "bytes": 3332000 }
+  "sampleRate": 16000, "channels": 1, "sampleCount": 833000, "startSample": 0, "startMs": 0, "endMs": 52062, "durationMs": 52062, "offsetBytes": 0, "bytes": 3332000 }
 ```
 
-The file holds raw little-endian 32-bit float samples, the channels interleaved, from `offsetBytes` on. The plugin opens it read-only or maps it (the operating system then shares the pages with every other process that does) and must not write to it: the core never changes a file once it is there. The core decodes **once** for everyone who asks for the same video, rate and channels, in one run or the next (the cache is keyed by the path, size and modification time of the source, and lives in `.videocraw-cache` in the result folder). The file name is not an identity to keep: it is only valid for the call. The description should be checked against the file before the samples are read (a length that does not fit is a 400).
+The file holds raw little-endian 32-bit float samples, the channels interleaved, from `offsetBytes` on. The plugin opens it read-only or maps it (the operating system then shares the pages with every other process that does) and must not write to it: VideoCraw never changes a file once it is there. VideoCraw decodes **once** for everyone who asks for the same video, rate and channels, in one run or the next (the cache is keyed by the path, size and modification time of the source, and lives in `.videocraw-cache` in the result folder). `startMs` and `endMs` say which stretch of the source the file holds (the whole sound, or one stretch of it once VideoCraw cuts media in windows), and `startSample` is the position of its first sample in the whole sound at this rate, so a time inside the file is `startMs + sample * 1000 / sampleRate`. The count of samples is `sampleCount` (it was `frames`: for video, frames are frames). The file name is not an identity to keep: it is only valid for the call. The description should be checked against the file before the samples are read (a length that does not fit is a 400).
 
-An input the flow leaves out stays out, and a plugin that lists no `wants` keeps getting files by path. If FFmpeg is not available the call fails with 503; a source with no audio fails with 422. The SDKs read the description for you (`videoplugins-sound-reader` in Rust, `decoded_audio` in the Python plugin), so a plugin does not parse it by hand. Video frames will follow the same way.
+An input the flow leaves out stays out, and a plugin that lists no `wants` keeps getting files by path. If FFmpeg is not available the call fails with 503; a source with no audio fails with 422. The SDKs read the description for you (`videoplugins-sound-reader` in Rust, `decoded_audio` in the Python plugin), so a plugin does not parse it by hand. ### Pictures of a video
+
+A plugin that works on the pictures asks for them the same way, with `"media": "video"`:
+
+```json
+"wants": { "frames": { "media": "video", "format": "gray8", "width": 320, "everyMs": 1000, "keyframesOnly": false } }
+```
+
+- `format` is `rgb24` (red, green, blue, a byte each; the default) or `gray8` (brightness, one byte).
+- `width` and `height` are the size of every picture, from 1 to 8192. With one of them the other follows the shape of the video; with none the pictures keep the size of the video.
+- `everyMs` keeps one picture for each stretch of that many milliseconds of the source: the first one at or after each multiple of it (a stretch with no picture gives none, never a repeat). Without it every picture is given. `keyframesOnly` keeps only the pictures that stand alone in the codec, and combines with `everyMs`.
+
+The input is replaced by:
+
+```json
+{ "kind": "video", "file": "C:/work/out/.videocraw-cache/9c1d….rgb24", "format": "rgb24", "width": 320, "height": 240,
+  "strideBytes": 960, "frameBytes": 230400, "frameCount": 52, "framesFile": "C:/work/out/.videocraw-cache/9c1d….frames.jsonl",
+  "startMs": 0, "endMs": 52062, "durationMs": 52062, "offsetBytes": 0, "bytes": 11980800 }
+```
+
+The file holds the pictures one after another, `frameBytes` each, rows of `strideBytes` with no padding. `framesFile` lists them, one JSON object a line, in the same order: `{"index":0,"ptsMs":0,"durationMs":40,"isKeyFrame":true}`. **Time is the only address that holds**: `ptsMs` is when the picture is shown in the source, and with a variable frame rate it is not `index / fps`. A picture is never repeated or dropped to hold a frame rate. The same rules as for sound apply: read-only, decoded once for everyone who asks for the same thing, checked against the file before reading. A source with no video stream fails with 422.
 
 ## Using one in a recipe
 
@@ -98,7 +138,7 @@ An input the flow leaves out stays out, and a plugin that lists no `wants` keeps
   "params": { "audio": "{{ audio }}", "minConfidence": 0.6 } }
 ```
 
-`method` defaults to `run`. Text values in `params` may use `{{ path }}`; a single `{{ path }}` passes the value as it is. A stored file (such as the result of an `audio` step) is passed as its object with `blob`, `mime`, `path` and `bytes`, plus `file`, the **absolute path** the plugin can open. What the plugin answers is kept under the step's id, so a recipe's `forEach` can turn a list in it into records. Times are integer milliseconds. A plugin used by any recipe must be installed: the run stops before it starts when one is missing. A plugin starts on its first call and stays up for the rest of the run.
+`method` defaults to `run`. Text values in `params` may use `{{ path }}`; a single `{{ path }}` passes the value as it is. A stored file (such as the result of an `audio` step) is passed as its object with `blob`, `mime`, `path` and `bytes`, plus `file`, the **absolute path** the plugin can open. What the plugin answers is kept under the step's id, so `forEach` can turn a list in it into records. A plugin used by any recipe must be installed: the run stops before it starts when one is missing. A plugin starts on its first call and stays up for the rest of the run.
 
 ## The protocol
 
@@ -106,59 +146,51 @@ One JSON object per line. VideoCraw writes to the plugin's standard input and re
 
 | Direction | Message | |
 |---|---|---|
-| core to plugin | `{"type":"hello","protocol":1}` | first message |
-| plugin to core | `{"type":"ready","protocol":1}` | the answer, within 30 s |
+| core to plugin | `{"type":"hello","protocol":2,"capabilities":{...}}` | first message: the protocol and the features VideoCraw offers |
+| plugin to core | `{"type":"ready","protocol":2,"capabilities":{...},"requires":[...]}` | the answer, within 30 s: the features the plugin offers (an empty object when none; leaving it out is a protocol error) and the ones it cannot work without |
 | core to plugin | `{"type":"call","id":1,"method":"find","params":{...}}` | a call; see Calls in parallel for how many may be in flight |
 | plugin to core | `{"type":"result","id":1,"result":{...}}` | the answer to call 1 |
 | plugin to core | `{"type":"error","id":1,"message":"...","code":429,"retryable":true,"details":{...}}` | the call failed, as the plugin decides; only `message` is required; the plugin stays up |
-| plugin to core | `{"type":"progress","id":1,"message":"..."}` | optional while a call runs; ignored for now |
+| plugin to core | `{"type":"progress","id":1,"message":"..."}` | optional while a call runs: a sign of life. With `stallSeconds` in the manifest, a call that goes that long without one is stopped (408) |
 | core to plugin | `{"type":"cancel","id":1}` | stop working on call 1; the plugin may answer it with an `error`, and the answer is ignored |
 | core to plugin | `{"type":"shutdown"}` | finish and exit (VideoCraw stops it after 5 s) |
 
 A plugin that times out, exits, or says something the protocol does not allow is stopped; the next call starts a fresh process. Unknown fields in a plugin's messages are ignored, so a newer plugin can say more than VideoCraw understands.
 
+### Capabilities
+
+Both sides say what they can do beyond the basics, and only what **both** offered may be used afterwards. `capabilities` is an object: a name for each feature, with the settings that side offers. VideoCraw offers today `wants` (`{"media":["audio","video"]}`: it can decode sound and pictures for an action that asks, see Getting the media decoded) and `progress` (it reads `progress` messages as signs of life). A feature the plugin offers and VideoCraw does not is ignored. `experimental` holds features still being tried, in the same shape, agreed one by one, so one can be tried without a new protocol number.
+
+`requires` in `ready` lists the features the plugin cannot work without. If one was not agreed VideoCraw refuses the plugin with a message that names it, at start and not in the middle of a run. A manifest with an action that has `wants` needs `wants` even if `requires` leaves it out. New protocol features from now on are capabilities, and the protocol number changes only when an existing message changes.
+
 ### What a failure is
 
-The plugin decides, and the core never reads a result to find out. Whatever the plugin wraps (a program that crashes, a function that returns nothing, a service that answers HTTP 200 with `"error": true` in the body) is turned into a protocol message by the plugin: an `error` for a failure, a `result` for a success, even when the result is empty. A result is never searched for error flags, and a `null` result is a success unless the plugin sent an `error`. A flow can still look at a successful result and branch on it.
+The plugin decides, and VideoCraw never reads a result to find out. Whatever the plugin wraps (a program that crashes, a function that returns nothing, a service that answers HTTP 200 with `"error": true` in the body) is turned into a protocol message by the plugin: an `error` for a failure, a `result` for a success, even when the result is empty. A result is never searched for error flags, and a `null` result is a success unless the plugin sent an `error`. A flow can still look at a successful result and branch on it.
 
 An `error` needs only a `message`. It may also carry:
 
-- `code`: what kind of failure it is. **A number means what the HTTP status code of that number means**, so the core and every workflow understand it without knowing the plugin: 400 a parameter is wrong, 401 or 403 not allowed, 404 something asked for is not there (a file, a model, a method), 408 it took too long, 409 conflict, 413 too large, 415 unsupported media, 422 the request is fine but cannot be done, 429 too busy or rate limited, 500 the plugin itself broke, 502 a service behind the plugin answered wrongly or nothing, 503 a service behind the plugin is unavailable, 504 it did not answer in time. **A text is the plugin's own name** for a failure (`MODEL_MISSING`, `QUOTA`), which a workflow can test but the core does not interpret. Use a number when one fits and a name when none does. A success is never reported with a code: it is a `result`.
-- `retryable`: `true` when trying again could work, `false` when it cannot. Leave it out when you do not know: the core then reads the code, taking 408, 429 and every 5xx as worth another try and any other 4xx as not, and a name or no code as saying nothing. What the plugin says wins over the code.
+- `code`: what kind of failure it is. **A number means what the HTTP status code of that number means**, so VideoCraw and every workflow understand it without knowing the plugin: 400 a parameter is wrong, 401 or 403 not allowed, 404 something asked for is not there (a file, a model, a method), 408 it took too long, 409 conflict, 413 too large, 415 unsupported media, 422 the request is fine but cannot be done, 429 too busy or rate limited, 500 the plugin itself broke, 502 a service behind the plugin answered wrongly or nothing, 503 a service behind the plugin is unavailable, 504 it did not answer in time. **A text is the plugin's own name** for a failure (`MODEL_MISSING`, `QUOTA`), which a workflow can test but VideoCraw does not interpret. Use a number when one fits and a name when none does. A success is never reported with a code: it is a `result`.
+- `retryable`: `true` when trying again could work, `false` when it cannot. Leave it out when you do not know: VideoCraw then reads the code, taking 408, 429 and every 5xx as worth another try and any other 4xx as not, and a name or no code as saying nothing. What the plugin says wins over the code.
 - `details`: anything worth keeping, such as what the wrapped service answered.
 
 A plugin that fails keeps running; the next call goes to it as usual.
 
 ### Calls in parallel
 
-A recipe can run several calls at once (parallel branches, or a `forEach` with several items at a time). The core sends each with its own `id` without waiting for the previous answer, up to `concurrency` calls per program and up to `processes` programs; further calls wait for a free slot. Answers may come in any order: the `id` says which call each belongs to, and a plugin writes each answer as one whole line. A plugin with `concurrency` 1 never sees a second call before it has answered the first.
+A recipe can run several calls at once (parallel branches, or a `forEach` with several items at a time). VideoCraw sends each with its own `id` without waiting for the previous answer, up to `concurrency` calls per program and up to `processes` programs; further calls wait for a free slot. Answers may come in any order: the `id` says which call each belongs to, and a plugin writes each answer as one whole line. A plugin with `concurrency` 1 never sees a second call before it has answered the first.
 
-When a call is cancelled (a sibling branch failed, or the run was stopped) the core sends `cancel` with its `id` and stops waiting at once. A plugin should drop that work promptly; any answer to a cancelled call is ignored. A plugin that has not answered a cancelled call when `cancelGraceSeconds` have passed is not listening: it is stopped, and with it any other call it had in flight, and the next call starts a fresh program. The same happens to a call that runs longer than `timeoutSeconds`.
+When a call is cancelled (a sibling branch failed, or the run was stopped) VideoCraw sends `cancel` with its `id` and stops waiting at once. A plugin should drop that work promptly; any answer to a cancelled call is ignored. A plugin that has not answered a cancelled call when `cancelGraceSeconds` have passed is not listening: it is stopped, and with it any other call it had in flight, and the next call starts a fresh program. The same happens to a call that runs longer than `timeoutSeconds`.
 
 ### Example exchange
 
 ```
-core   -> {"type":"hello","protocol":1}
-plugin -> {"type":"ready","protocol":1}
+core   -> {"type":"hello","protocol":2,"capabilities":{"wants":{"media":["audio"]}}}
+plugin -> {"type":"ready","protocol":2,"capabilities":{"wants":{"media":["audio"]}}}
 core   -> {"type":"call","id":1,"method":"find","params":{"audio":{"blob":"sha256:9f2c…","mime":"audio/mpeg","path":"blobs/9f/9f2c….mp3","bytes":2048,"file":"C:/work/out/blobs/9f/9f2c….mp3"},"label":"cat"}}
 plugin -> {"type":"result","id":1,"result":{"hits":[{"startMs":12330,"endMs":13100,"label":"cat"}]}}
 core   -> {"type":"shutdown"}
 ```
 
-### A minimal plugin
+## Not in this slice
 
-In any language, the whole job is: read lines, answer lines. In pseudo-code:
-
-```
-for each line on standard input:
-    message = parse JSON
-    if message.type == "hello":    write {"type":"ready","protocol":1}
-    if message.type == "call":     write {"type":"result","id":message.id,"result":<your answer>}
-                                   (or {"type":"error","id":message.id,"message":"why"})
-    if message.type == "shutdown": exit
-flush standard output after every line
-```
-
-## Not in this version
-
-Shared-memory regions and writable regions for large data, host services (the plugin asking VideoCraw for frames or clips), typed ports and the check that a step's output fits the next input, sockets and WebSocket as transports, permissions and signing, install and update commands, and caching of `pure` plugins.
+From the discussion in #5 and #6, still to do: shared-memory regions and writable regions for large data, host services (the plugin asking VideoCraw for frames or clips), typed ports and the check that a step's output fits the next input, sockets and WebSocket as transports, permissions and signing, install and update commands, and caching of `pure` plugins.

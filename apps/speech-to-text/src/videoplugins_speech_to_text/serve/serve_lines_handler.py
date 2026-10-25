@@ -9,7 +9,26 @@ from typing import Any, BinaryIO
 
 from .failure_error import Failure
 
-PROTOCOL = 1
+PROTOCOL = 2
+
+#: What this SDK can do for a plugin: read the sound and the pictures the host decodes, and say a
+#: call is alive.
+CAPABILITIES: dict[str, Any] = {"wants": {"media": ["audio", "video"]}, "progress": {}}
+
+
+class Call(threading.Event):
+    """What an action holds of its call: an event that is set when the host cancels it, and a way
+    to say the call is alive (`progress`). A plugin whose manifest sets `stallSeconds` must do this
+    more often than that, or the host stops it."""
+
+    def __init__(self, notify: Callable[[str], None] | None = None) -> None:
+        super().__init__()
+        self._notify = notify
+
+    def progress(self, message: str = "") -> None:
+        if self._notify is not None:
+            self._notify(message)
+
 
 #: What a plugin is: a function of the action called, its params and an event that is set when
 #: the host cancels the call. It returns the result, or raises `Failure` to fail.
@@ -52,10 +71,10 @@ def serve_lines(lines: Iterable[str], write: Callable[[str], None], handler: Han
             continue
         kind = message.get("type")
         if kind == "hello":
-            write(_dump({"type": "ready", "protocol": PROTOCOL}))
+            write(_dump({"type": "ready", "protocol": PROTOCOL, "capabilities": CAPABILITIES}))
         elif kind == "call":
-            cancel = threading.Event()
             call_id = message.get("id")
+            cancel = Call(_progress_sender(call_id, write))
             if isinstance(call_id, int):
                 with cancels_lock:
                     cancels[call_id] = cancel
@@ -77,6 +96,13 @@ def serve_lines(lines: Iterable[str], write: Callable[[str], None], handler: Han
 
     for thread in calls:
         thread.join()
+
+
+def _progress_sender(call_id: Any, write: Callable[[str], None]) -> Callable[[str], None]:
+    def send(note: str) -> None:
+        write(_dump({"type": "progress", "id": call_id, "message": note}))
+
+    return send
 
 
 def _run_call(

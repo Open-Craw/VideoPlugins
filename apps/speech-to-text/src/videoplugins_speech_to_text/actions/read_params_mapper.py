@@ -14,14 +14,15 @@ _MODEL = re.compile(r"^[A-Za-z0-9_.\-/\\: ]{1,200}$")
 _LANGUAGE = re.compile(r"^[a-z]{2,3}(-[A-Za-z]{2,4})?$")
 
 
-def read_media(params: dict[str, Any]) -> Path | np.ndarray:
-    """What to listen to: the samples VideoCraw decoded (a region), or else the file `media` names,
-    as a stored file or a video (an object with an absolute `file`) or a path in text. A file that
-    is not there is a 404."""
+def read_media(params: dict[str, Any]) -> tuple[Path | np.ndarray, int]:
+    """What to listen to, and where it starts in the source in milliseconds: the samples VideoCraw
+    decoded (a region, which may be a stretch of the source), or else the file `media` names, as a
+    stored file or a video (an object with an absolute `file`) or a path in text, from 0. A file
+    that is not there is a 404."""
     media = params.get("media")
     decoded = read_audio_region(media)
     if decoded is not None:
-        return decoded
+        return decoded.samples, decoded.start_ms
     if isinstance(media, str) and media:
         path = Path(media)
     elif isinstance(media, dict) and isinstance(media.get("file"), str):
@@ -34,7 +35,7 @@ def read_media(params: dict[str, Any]) -> Path | np.ndarray:
         raise Failure.status(400, f"media must be a stored file or a path in text, not {media!r}")
     if not path.is_file():
         raise Failure.status(404, f"{path}: the file is not there")
-    return path
+    return path, 0
 
 
 def read_options(params: dict[str, Any]) -> TranscribeOptions:

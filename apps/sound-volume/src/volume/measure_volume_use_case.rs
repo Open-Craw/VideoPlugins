@@ -12,7 +12,8 @@ pub struct VolumeOptions {
     pub bands: Option<BandEdges>,
 }
 
-/// Measures the sound window by window, one after the other with none missing or overlapping. A
+/// Measures the sound window by window, one after the other with none missing or overlapping.
+/// Times are in the source: a stretch the host cut out starts at its `start_ms`. A
 /// last window shorter than a quarter of the others is left out: so little sound says little.
 pub fn measure_volume(sound: &Sound, options: VolumeOptions) -> Vec<VolumeWindow> {
     let rate = u64::from(sound.sample_rate);
@@ -29,8 +30,8 @@ pub fn measure_volume(sound: &Sound, options: VolumeOptions) -> Vec<VolumeWindow
             .bands
             .map(|edges| analyser.levels(samples, sound.sample_rate, edges));
         windows.push(VolumeWindow {
-            start_ms: first as u64 * 1000 / rate,
-            end_ms: (first + samples.len()) as u64 * 1000 / rate,
+            start_ms: sound.start_ms + first as u64 * 1000 / rate,
+            end_ms: sound.start_ms + (first + samples.len()) as u64 * 1000 / rate,
             rms_db: rms_db(samples),
             peak_db: peak_db(samples),
             bands,
@@ -53,6 +54,7 @@ mod tests {
         Sound {
             samples: tone(first).chain(tone(second)).collect(),
             sample_rate: 16_000,
+            start_ms: 0,
         }
     }
 
@@ -99,6 +101,7 @@ mod tests {
         let sound = |seconds: f32| Sound {
             samples: vec![0.1; (8_000.0 * seconds) as usize],
             sample_rate: 8_000,
+            start_ms: 0,
         };
         let options = VolumeOptions {
             window_ms: 1_000,
@@ -110,12 +113,20 @@ mod tests {
         let windows = measure_volume(&sound(2.5), options);
         assert_eq!(windows.len(), 3);
         assert_eq!(windows[2].end_ms, 2_500);
+        // A stretch cut out of a longer sound keeps the time of the source.
+        let stretch = Sound {
+            start_ms: 4_000,
+            ..sound(2.0)
+        };
+        let windows = measure_volume(&stretch, options);
+        assert_eq!((windows[0].start_ms, windows[1].end_ms), (4_000, 6_000));
         // A sound shorter than a window still gives one.
         assert_eq!(measure_volume(&sound(0.3), options).len(), 1);
         assert!(measure_volume(
             &Sound {
                 samples: vec![],
-                sample_rate: 8_000
+                sample_rate: 8_000,
+                start_ms: 0
             },
             options
         )

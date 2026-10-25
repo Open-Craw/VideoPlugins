@@ -1,7 +1,7 @@
 {
   "name": "sound-volume",
   "version": "0.1.0",
-  "protocol": 1,
+  "protocol": 2,
   "effect": "pure",
   "command": ["../../dist/cargo/release/videoplugins-sound-volume"],
   "timeoutSeconds": 300,

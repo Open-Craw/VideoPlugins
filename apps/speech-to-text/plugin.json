@@ -1,16 +1,26 @@
 {
   "name": "speech-to-text",
   "version": "0.1.0",
-  "protocol": 1,
+  "protocol": 2,
   "effect": "pure",
   "command": ["python", "-m", "videoplugins_speech_to_text"],
   "timeoutSeconds": 3600,
   "concurrency": 1,
   "processes": 1,
+  "stallSeconds": 120,
+  "requirements": { "cpu": 2, "memoryMb": 1500, "maxForks": 1 },
   "actions": {
     "transcribe": {
-      "description": "Writes down the sentences said in a video or a sound, with the time each starts and ends.",
+      "description": "Writes down the sentences said in a video or a sound, with the time each starts and ends. The core may run it a window of the media at a time and join the result: the sentences are joined, text is put together from them and durationMs is the whole media's; language and model are the first window's.",
       "wants": { "media": { "media": "audio", "sampleRate": 16000, "channels": 1 } },
+      "window": {
+        "minMs": 20000,
+        "maxMs": 120000,
+        "overlapMs": 5000,
+        "itemsAt": "sentences",
+        "joinText": { "field": "text", "from": "text", "separator": " " },
+        "durationAt": "durationMs"
+      },
       "inputs": {
         "type": "object",
         "properties": {

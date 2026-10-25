@@ -11,7 +11,7 @@ use crate::read::Sound;
 ///
 /// A region is what VideoCraw hands over for an input the manifest lists under `wants`: raw
 /// little-endian 32-bit float samples in a file the core decoded once, described by `file`,
-/// `format` (`f32le`), `sampleRate`, `channels`, `frames` and `offsetBytes`. The file is mapped
+/// `format` (`f32le`), `sampleRate`, `channels`, `sampleCount`, `startMs` and `offsetBytes`. The file is mapped
 /// read-only, so the operating system shares its pages with every other process that reads it, and
 /// the description is checked against the file before a sample is read. Two channels are mixed down.
 pub fn read_audio_region(value: &Value) -> Result<Option<Sound>, SoundInputError> {
@@ -37,11 +37,12 @@ pub fn read_audio_region(value: &Value) -> Result<Option<Sound>, SoundInputError
         .get("file")
         .and_then(Value::as_str)
         .ok_or_else(|| SoundInputError::new(400, "the audio region has no file"))?;
-    let (sample_rate, channels, frames, offset) = (
+    let (sample_rate, channels, frames, offset, start_ms) = (
         number("sampleRate")?,
         number("channels")?,
-        number("frames")?,
+        number("sampleCount")?,
         number("offsetBytes")?,
+        number("startMs")?,
     );
     if !(1..=2).contains(&channels) || sample_rate == 0 || sample_rate > u64::from(u32::MAX) {
         return Err(SoundInputError::new(
@@ -71,6 +72,7 @@ pub fn read_audio_region(value: &Value) -> Result<Option<Sound>, SoundInputError
         return Ok(Some(Sound {
             samples: Vec::new(),
             sample_rate,
+            start_ms,
         }));
     }
     // Read-only: nothing here writes, and the core never changes the file once it has put it there.
@@ -91,6 +93,7 @@ pub fn read_audio_region(value: &Value) -> Result<Option<Sound>, SoundInputError
     Ok(Some(Sound {
         samples,
         sample_rate,
+        start_ms,
     }))
 }
 
@@ -109,7 +112,7 @@ mod tests {
 
     fn region(file: &str, channels: u64, frames: u64) -> Value {
         json!({ "kind": "audio", "file": file, "format": "f32le", "sampleRate": 16000,
-                "channels": channels, "frames": frames, "offsetBytes": 0 })
+                "channels": channels, "sampleCount": frames, "startMs": 0, "offsetBytes": 0 })
     }
 
     #[test]
@@ -123,6 +126,17 @@ mod tests {
         let stereo = file_of("stereo", &[1.0, 0.0, 0.5, 0.5]);
         let sound = read_audio_region(&region(&stereo, 2, 2)).unwrap().unwrap();
         assert_eq!(sound.samples, vec![0.5, 0.5]);
+    }
+
+    #[test]
+    fn a_stretch_knows_where_it_starts_in_the_source() {
+        let file = file_of("stretch", &[0.1, 0.2]);
+        let mut stretch = region(&file, 1, 2);
+        stretch["startMs"] = json!(2500);
+        let sound = read_audio_region(&stretch).unwrap().unwrap();
+        assert_eq!(sound.start_ms, 2500);
+        stretch.as_object_mut().unwrap().remove("startMs");
+        assert_eq!(read_audio_region(&stretch).unwrap_err().code, 400);
     }
 
     #[test]

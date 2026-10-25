@@ -3,6 +3,10 @@
 pub struct Sound {
     pub samples: Vec<f32>,
     pub sample_rate: u32,
+    /// Where the first sample is in the source, in milliseconds: 0 for a whole sound, more for a
+    /// stretch the host cut out of it. Times an action gives are in the time of the source, so
+    /// they start from here.
+    pub start_ms: u64,
 }
 
 impl Sound {
@@ -24,12 +28,14 @@ mod tests {
         let sound = Sound {
             samples: vec![0.0; 22_050],
             sample_rate: 44_100,
+            start_ms: 0,
         };
         assert_eq!(sound.duration_ms(), 500);
         assert_eq!(
             Sound {
                 samples: vec![],
-                sample_rate: 44_100
+                sample_rate: 44_100,
+                start_ms: 0
             }
             .duration_ms(),
             0
@@ -37,7 +43,8 @@ mod tests {
         assert_eq!(
             Sound {
                 samples: vec![0.0; 5],
-                sample_rate: 0
+                sample_rate: 0,
+                start_ms: 0
             }
             .duration_ms(),
             0
