@@ -1,0 +1,62 @@
+{
+  "name": "sound-graph",
+  "version": "0.1.0",
+  "protocol": 1,
+  "effect": "pure",
+  "command": ["../../dist/cargo/release/videoplugins-sound-graph"],
+  "timeoutSeconds": 300,
+  "concurrency": 4,
+  "actions": {
+    "waveform": {
+      "description": "Draws the waves of a sound as an SVG picture, with the stretches you give marked behind them and a time axis under them.",
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "audio": { "type": ["object", "string"], "description": "The sound: a stored file (an object with an absolute file path) or a path in text." },
+          "width": { "type": "integer", "minimum": 100, "maximum": 10000, "description": "Width of the picture in pixels (default 1200)." },
+          "height": { "type": "integer", "minimum": 40, "maximum": 2000, "description": "Height in pixels (default 200)." },
+          "color": { "type": "string", "maxLength": 64, "description": "Color of the waves (default #2b6cb0)." },
+          "background": { "type": "string", "maxLength": 64, "description": "Background color, or none (default #ffffff)." },
+          "normalize": { "type": "boolean", "description": "Stretch the waves so the loudest point touches the edge (default false: a quiet sound looks quiet)." },
+          "showTime": { "type": "boolean", "description": "Draw the time axis (default true)." },
+          "title": { "type": "string", "maxLength": 200, "description": "Title of the picture, for people who cannot see it." },
+          "regions": {
+            "type": "array",
+            "maxItems": 5000,
+            "description": "Stretches to mark. The sentences of a transcript work as they are: their text is the label.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "startMs": { "type": "integer", "minimum": 0 },
+                "endMs": { "type": "integer", "minimum": 0 },
+                "label": { "type": "string" },
+                "text": { "type": "string", "description": "Used as the label when there is none." },
+                "color": { "type": "string", "maxLength": 64 }
+              },
+              "required": ["startMs", "endMs"]
+            }
+          },
+          "sampleRate": { "type": "integer", "minimum": 4000, "maximum": 192000 }
+        },
+        "required": ["audio"],
+        "additionalProperties": false
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "svg": { "type": "string", "description": "The picture, as the text of an SVG file." },
+          "width": { "type": "integer" },
+          "height": { "type": "integer" },
+          "durationMs": { "type": "integer" },
+          "sampleRate": { "type": "integer" }
+        },
+        "required": ["svg", "width", "height", "durationMs", "sampleRate"]
+      },
+      "failures": [
+        { "code": 400, "description": "A param is wrong or audio is missing." },
+        { "code": 404, "description": "The sound file is not there." },
+        { "code": 422, "description": "The file is not a sound this plugin can read." }
+      ]
+    }
+  }
+}
