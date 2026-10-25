@@ -1,0 +1,14 @@
+# Dependencies and build output of the plugins
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+target/
+dist/
+build/
+
+# Local files
+.env
+*.log
+.DS_Store
+Thumbs.db
