@@ -10,6 +10,8 @@ This repository is in early development. Work happens on the `dev` branch; `main
 
 Read [docs/plugin-protocol.md](docs/plugin-protocol.md): the manifest (`plugin.json`), the messages a plugin exchanges with VideoCraw, and an example exchange. A plugin needs nothing from this repository to work; it only has to speak the protocol.
 
+Then [docs/writing-good-plugins.md](docs/writing-good-plugins.md): guidance, not rules, on what makes a plugin pleasant to use in a workflow (report failures as failures, handle `cancel`, stay predictable).
+
 ## Layout
 
 ```
@@ -20,6 +22,7 @@ apps/
     ...                   its own code, in its own language
 docs/
   plugin-protocol.md      the protocol, version 1
+  writing-good-plugins.md guidance for plugin authors
 ```
 
 The repository is a [MonoSmith](https://github.com/monosmith-app/monosmith) workspace, so each plugin is a smith project (`smith add app <name> --lang <language>`) and `smith lint`, `smith test` and `smith build` run for all of them. Give VideoCraw the `apps` folder with `--plugins apps`.
