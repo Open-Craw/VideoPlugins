@@ -15,7 +15,7 @@ cat-sounds-0.1.0-windows-x86_64.vcw
   ...                 whatever else the plugin needs to run
 ```
 
-`plugin.json` is always at the root. Its `command` is resolved against the folder the package is unpacked into, so the program and its files are packed where the command says. The file name is only a convention: `<name>-<version>-<platform>.vcw`.
+`plugin.json` is always at the root. Its `command` is resolved against the folder the package is unpacked into, so the program and its files are packed where the command says. The file name is only a convention: `<name>-<version>-<platform>.vcw`. The `vcw pack` tool makes a package from a plugin folder; a package made by hand that follows this page is just as good.
 
 **Not in the package:**
 
