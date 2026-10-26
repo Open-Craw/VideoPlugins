@@ -25,6 +25,7 @@ Then [docs/writing-good-plugins.md](docs/writing-good-plugins.md): guidance, not
 | [sound-graph](apps/sound-graph) | Rust | draws the waves of a sound as an SVG, with the sentences marked |
 | [sound-clean](apps/sound-clean) | Rust | takes steady noise out of a sound and hands the cleaned sound to the next plugin |
 | [thumbnail](apps/thumbnail) | Rust | chooses the pictures that show a video best (sharp, well exposed, not all from one scene) |
+| [coco-objects](apps/coco-objects) | Rust | finds the things a video shows from the 80 COCO classes (cat, person, car...) with a fast detector and no language model: one appearance for each time a class shows up, with its first picture and time |
 | [example-hits](apps/example-hits) | Rust | the reference plugin: pretends to find things |
 
 Shared code: [libs/plugin-sdk](libs/plugin-sdk) speaks the protocol for a Rust plugin (answers `hello` with its capabilities, runs every call on its own thread, cancel, progress, the work folder), [libs/sound-reader](libs/sound-reader) reads the sound VideoCraw decoded (or any common audio file) and writes a sound for the next plugin, and [libs/frame-reader](libs/frame-reader) reads the pictures VideoCraw decoded. The speech plugin has the same in Python.
