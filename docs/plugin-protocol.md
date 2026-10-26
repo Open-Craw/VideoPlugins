@@ -142,6 +142,21 @@ The input is replaced by:
 
 The file holds the pictures one after another, `frameBytes` each, rows of `strideBytes` with no padding. `framesFile` lists them, one JSON object a line, in the same order: `{"index":0,"ptsMs":0,"durationMs":40,"isKeyFrame":true}`. **Time is the only address that holds**: `ptsMs` is when the picture is shown in the source, and with a variable frame rate it is not `index / fps`. A picture is never repeated or dropped to hold a frame rate. The same rules as for sound apply: read-only, decoded once for everyone who asks for the same thing, checked against the file before reading. A source with no video stream fails with 422.
 
+## Giving a file to the result
+
+A plugin that makes a picture, a clip or any file the user should keep (a frame where a cat shows up, a crop) does not put its bytes in the answer. `hello` carries `workDir`, a folder the plugin may write in for this run. The plugin writes the file there and puts, where the file belongs in its result:
+
+```json
+{ "workFile": "C:/work/out/.videocraw-cache/work/found-1.png", "mime": "image/png" }
+```
+
+After the call VideoCraw moves the file into the result's store and replaces that object with the usual stored file, `{ "blob": "sha256:…", "mime": "image/png", "path": "blobs/ab/ab….png", "bytes": 1234 }`. A flow sees nothing else, and the next plugin is given it with `file`, the absolute path, like any stored file. Use it at any depth: a list of findings can each carry one.
+
+- The file must be inside `workDir`. Any other path fails the action with 500 and a message that names it.
+- The file is **moved**: it is gone from `workDir` afterwards, so write one file for each use.
+- `mime` is needed. The stored name keeps the extension of the file.
+- Declare it in `outputs` as an object with `blob`, `mime`, `path` and `bytes`.
+
 ## Using one in a recipe
 
 ```json
