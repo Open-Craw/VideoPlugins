@@ -12,6 +12,8 @@ Read [docs/plugin-protocol.md](docs/plugin-protocol.md): the manifest (`plugin.j
 
 To hand a plugin to someone, pack it as a `.vcw` file: [docs/vcw-format.md](docs/vcw-format.md) says what goes in it and what an installer checks (`videocraw plugins install cat-sounds.vcw`).
 
+With Claude Code, open this repository and ask for the `plugin-author` agent (or the `write-a-plugin` skill): both are in `.claude/` and work from these documents, and use the `vcw` tool and its MCP server when they are installed.
+
 Then [docs/writing-good-plugins.md](docs/writing-good-plugins.md): guidance, not rules, on what makes a plugin pleasant to use in a workflow (report failures as failures, handle `cancel`, stay predictable).
 
 ## What is here
