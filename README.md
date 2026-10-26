@@ -10,6 +10,8 @@ This repository is in early development. Work happens on the `dev` branch; `main
 
 Read [docs/plugin-protocol.md](docs/plugin-protocol.md): the manifest (`plugin.json`), the messages a plugin exchanges with VideoCraw, and an example exchange. A plugin needs nothing from this repository to work; it only has to speak the protocol.
 
+To hand a plugin to someone, pack it as a `.vcw` file: [docs/vcw-format.md](docs/vcw-format.md) says what goes in it and what an installer checks (`videocraw plugins install cat-sounds.vcw`).
+
 Then [docs/writing-good-plugins.md](docs/writing-good-plugins.md): guidance, not rules, on what makes a plugin pleasant to use in a workflow (report failures as failures, handle `cancel`, stay predictable).
 
 ## What is here
@@ -36,6 +38,7 @@ apps/
 docs/
   plugin-protocol.md      the protocol, version 2
   writing-good-plugins.md guidance for plugin authors
+  vcw-format.md           the .vcw package: one plugin in one file
 ```
 
 The repository is a [MonoSmith](https://github.com/monosmith-app/monosmith) workspace, so each plugin is a smith project (`smith add app <name> --lang <language>`) and `smith lint`, `smith test` and `smith build` run for all of them. Give VideoCraw the `apps` folder with `--plugins apps`.
