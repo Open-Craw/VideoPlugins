@@ -1,0 +1,13 @@
+[package]
+name = "videoplugins-thumbnail"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata.smith]
+kind = "app"
+
+[dependencies]
+serde_json = "1"
+videoplugins-frame-reader = { path = "../../libs/frame-reader" }
+videoplugins-plugin-sdk = { path = "../../libs/plugin-sdk" }

@@ -431,6 +431,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "videoplugins-frame-reader"
+version = "0.0.0"
+dependencies = [
+ "memmap2",
+ "serde_json",
+]
+
+[[package]]
 name = "videoplugins-plugin-sdk"
 version = "0.0.0"
 dependencies = [
@@ -473,6 +481,15 @@ dependencies = [
  "serde_json",
  "videoplugins-plugin-sdk",
  "videoplugins-sound-reader",
+]
+
+[[package]]
+name = "videoplugins-thumbnail"
+version = "0.0.0"
+dependencies = [
+ "serde_json",
+ "videoplugins-frame-reader",
+ "videoplugins-plugin-sdk",
 ]
 
 [[package]]
