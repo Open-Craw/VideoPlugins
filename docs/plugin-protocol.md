@@ -25,7 +25,7 @@ videocraw run recipes/ --out out/result.json --plugins ~/.videocraw/plugins
 |---|---|
 | `name` | what recipes call it (unique among installed plugins) |
 | `protocol` | the protocol version it speaks; VideoCraw refuses any other |
-| `effect` | `pure` (same input, same output: may be cached and retried later) or `effectful` (changes something outside). Recorded now, not used yet |
+| `effect` | `pure` (same input, same output: may be cached and retried later) or `effectful` (changes something outside). With `--resume` VideoCraw keeps the result of a `pure` action and uses it again on a later run when the plugin's name and `version`, the protocol, what the action `wants` and its inputs are all the same: change `version` whenever the results would change (a new model, a new setting inside). An `effectful` action is always run |
 | `command` | the program and its arguments. A first entry with a path separator is relative to the plugin folder; a bare name is looked up on the system path. The program runs with the plugin folder as its working directory |
 | `timeoutSeconds` | how long one call may take (default 600). After that the plugin is stopped and the video fails |
 | `concurrency` | how many calls the program can work on at the same time (default 1: one at a time). Above 1, the program must be able to read the next message while it works on a call |
@@ -101,6 +101,8 @@ An action can say that it may be run a stretch of the media at a time, and Video
 - `minMs` and `maxMs` are the shortest and longest window the action works well on; VideoCraw aims for a minute, less when the decoded media is heavy (256 MB at most), and stays inside them. `overlapMs` is how far each window reaches past its core on both sides: make it at least the longest item the action finds, so the window that owns an item has seen all of it. An item belongs to the window whose core holds its middle, so one that two windows saw is kept once.
 - The result the flow reads is the first window's result with the joined items at `itemsAt`. Fields that describe the whole media can be put back: `"joinText": { "field": "text", "from": "text", "separator": " " }` rebuilds the text of everything said from the `text` of each joined item, and `"durationAt": "durationMs"` sets the duration of the whole source. Fields that cannot be rebuilt are named in `drop` and left out. All the other fields (the language found, the model used) are the first window's. An action that does not fit this (it gives one value for the whole media, or needs to see it all) says nothing, or `"window": "none"`, and runs on the whole media.
 
+An action that only **makes a sound for the next one** (a cleaner, a voice extractor) has nothing to join by items. It says `mediaAt` in place of `itemsAt`: `"window": { "mediaAt": "audio", "overlapMs": 1000 }`, where `mediaAt` is the path in its result of the sound it made (see Writing sound for the next plugin). VideoCraw then runs it a window at a time together with the action that listens to that sound, on the same window, and the cleaned sound only exists a window at a time. `itemsAt` and `mediaAt` cannot both be set. An action that makes the whole sound in one call (no `window`) can still be followed by a windowed one: VideoCraw plans the windows of the next action over the sound it described.
+
 Failures keep their code: a window that fails with a 429 makes the action fail with a 429, and `retryPolicy` and `timeout` apply to each window's call.
 
 ## Getting the media decoded
@@ -157,6 +159,21 @@ After the call VideoCraw moves the file into the result's store and replaces tha
 - `mime` is needed. The stored name keeps the extension of the file.
 - Declare it in `outputs` as an object with `blob`, `mime`, `path` and `bytes`.
 
+## Writing sound for the next plugin
+
+A plugin that makes sound for another plugin (a cleaner, a voice extractor) does not put samples in its answer. `hello` carries `workDir`, a folder it may write in for this run; it writes raw little-endian 32-bit float samples there and answers with a description of them, the same one VideoCraw gives a plugin that asks for decoded sound:
+
+```json
+{ "kind": "audio", "file": "C:/work/out/.videocraw-cache/work/clean-1.f32le", "format": "f32le",
+  "sampleRate": 16000, "channels": 1, "sampleCount": 128000, "startMs": 0, "endMs": 8000,
+  "durationMs": 8000, "offsetBytes": 0, "bytes": 512000 }
+```
+
+- `startMs` is where the sound starts in the time of the **source** (more than 0 when the plugin was given a window), so the next plugin answers in the time of the source.
+- The next action is given the description as it is, if its `sampleRate` and `channels` are what that action `wants`; otherwise it fails with a 422 that says so. A plugin that makes sound should therefore make it at the rate the next ones take (16000 is the usual), or offer a choice.
+- It is good for **this run only**: the folder is emptied at the end, and a result that names a file in it is not kept for `--resume`. To keep a sound, hand it over as a file for the result (see the section before).
+- `mediaAt` in a window policy names **one** sound. A plugin that makes more than one (a voice and the rest) describes each under its own name in the result.
+
 ## Using one in a recipe
 
 ```json
@@ -172,7 +189,7 @@ One JSON object per line. VideoCraw writes to the plugin's standard input and re
 
 | Direction | Message | |
 |---|---|---|
-| core to plugin | `{"type":"hello","protocol":2,"capabilities":{...}}` | first message: the protocol and the features VideoCraw offers |
+| core to plugin | `{"type":"hello","protocol":2,"capabilities":{...}}` | first message: the protocol and the features VideoCraw offers, and `"workDir":"<folder>"` (when it has one) a folder the plugin may write in for this run only (sound for the next plugin, files for the result); it is emptied when the run ends |
 | plugin to core | `{"type":"ready","protocol":2,"capabilities":{...},"requires":[...]}` | the answer, within 30 s: the features the plugin offers (an empty object when none; leaving it out is a protocol error) and the ones it cannot work without |
 | core to plugin | `{"type":"call","id":1,"method":"find","params":{...}}` | a call; see Calls in parallel for how many may be in flight |
 | plugin to core | `{"type":"result","id":1,"result":{...}}` | the answer to call 1 |
@@ -185,7 +202,7 @@ A plugin that times out, exits, or says something the protocol does not allow is
 
 ### Capabilities
 
-Both sides say what they can do beyond the basics, and only what **both** offered may be used afterwards. `capabilities` is an object: a name for each feature, with the settings that side offers. VideoCraw offers today `wants` (`{"media":["audio","video"]}`: it can decode sound and pictures for an action that asks, see Getting the media decoded) and `progress` (it reads `progress` messages as signs of life). A feature the plugin offers and VideoCraw does not is ignored. `experimental` holds features still being tried, in the same shape, agreed one by one, so one can be tried without a new protocol number.
+Both sides say what they can do beyond the basics, and only what **both** offered may be used afterwards. `capabilities` is an object: a name for each feature, with the settings that side offers. VideoCraw offers today `wants` (`{"media":["audio","video"]}`: it can decode sound and pictures for an action that asks, see Getting the media decoded) and `progress` (it reads `progress` messages as signs of life). When it has a folder for the plugin to write in it also gives `workDir` in `hello` and offers `outputs` (`{"media":["audio"]}`: a plugin may write sound there for the next plugin, see Writing sound for the next plugin). Handing a file to the result (`workFile`) is not a capability: it works whenever `workDir` was given. A feature the plugin offers and VideoCraw does not is ignored. `experimental` holds features still being tried, in the same shape, agreed one by one, so one can be tried without a new protocol number.
 
 `requires` in `ready` lists the features the plugin cannot work without. If one was not agreed VideoCraw refuses the plugin with a message that names it, at start and not in the middle of a run. A manifest with an action that has `wants` needs `wants` even if `requires` leaves it out. New protocol features from now on are capabilities, and the protocol number changes only when an existing message changes.
 

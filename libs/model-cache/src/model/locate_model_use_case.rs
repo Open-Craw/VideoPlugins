@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use std::time::Duration;
+
 use super::download_model_use_case::download_model;
 use super::model_error::ModelError;
 use super::model_file_contract::ModelFile;
@@ -23,10 +25,12 @@ pub fn locate_model(
         return Ok(file);
     }
     progress(&format!("downloading {}", model.file));
-    download_model(model, &file).map_err(|message| ModelError {
-        code: 503,
-        message: format!("{} could not be downloaded: {message}", model.file),
-        retryable: true,
+    download_model(model, &file, &progress, Duration::from_secs(1)).map_err(|message| {
+        ModelError {
+            code: 503,
+            message: format!("{} could not be downloaded: {message}", model.file),
+            retryable: true,
+        }
     })?;
     Ok(file)
 }
