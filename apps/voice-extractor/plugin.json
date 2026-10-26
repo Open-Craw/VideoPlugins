@@ -1,0 +1,181 @@
+{
+  "name": "voice-extractor",
+  "version": "0.1.0",
+  "protocol": 2,
+  "effect": "pure",
+  "command": [
+    "../../dist/cargo/release/videoplugins-voice-extractor"
+  ],
+  "timeoutSeconds": 1800,
+  "stallSeconds": 120,
+  "concurrency": 1,
+  "requirements": {
+    "cpu": 2,
+    "memoryMb": 1500
+  },
+  "permissions": {
+    "env": [
+      "VIDEOCRAW_MODELS"
+    ],
+    "network": [
+      "huggingface.co",
+      "us.aws.cdn.hf.co"
+    ],
+    "write": [
+      "~/.videocraw/models"
+    ]
+  },
+  "actions": {
+    "extract": {
+      "description": "Splits the sound of a video into the voice and the rest, with DeepFilterNet3: the voice is what a speech-enhancement network keeps, the rest is what it took out (it is not clean: some of the voice stays in it). Each track is given in a form the next plugin can read directly (speech-to-text on the voice, sound-events on the rest), and as a WAV file in the result when asked.",
+      "wants": {
+        "media": {
+          "media": "audio",
+          "sampleRate": 48000,
+          "channels": 1
+        }
+      },
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "media": {
+            "type": [
+              "object",
+              "string"
+            ],
+            "description": "The video or sound: a stored file or a video as media.open gives it, or a path in text. VideoCraw decodes its sound to 48 kHz, one channel."
+          },
+          "keep": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "How much of the original sound is added back into the voice (default 0: the voice as the network makes it). A little (0.15) hides the artifacts of the network and lets some of the noise through."
+          },
+          "sampleRate": {
+            "type": "integer",
+            "enum": [
+              16000,
+              48000
+            ],
+            "description": "The rate of the tracks given (default 16000, what the speech and sound plugins take)."
+          },
+          "rest": {
+            "type": "boolean",
+            "description": "Give the rest as well as the voice (default true)."
+          },
+          "files": {
+            "type": "boolean",
+            "description": "Give each track as a WAV file in the result too, as voiceFile and restFile (default false)."
+          }
+        },
+        "required": [
+          "media"
+        ],
+        "additionalProperties": false
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "voice": {
+            "type": "object",
+            "description": "The track, described as VideoCraw describes decoded sound (kind audio, f32le, file, sampleRate, channels, sampleCount, startMs...). Give it to an action that wants sound; it is good for this run only."
+          },
+          "rest": {
+            "type": "object",
+            "description": "The track, described as VideoCraw describes decoded sound (kind audio, f32le, file, sampleRate, channels, sampleCount, startMs...). Give it to an action that wants sound; it is good for this run only."
+          },
+          "voiceFile": {
+            "type": "object",
+            "description": "The track as a stored WAV file.",
+            "properties": {
+              "blob": {
+                "type": "string"
+              },
+              "mime": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "bytes": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "blob",
+              "mime",
+              "path",
+              "bytes"
+            ]
+          },
+          "restFile": {
+            "type": "object",
+            "description": "The track as a stored WAV file.",
+            "properties": {
+              "blob": {
+                "type": "string"
+              },
+              "mime": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "bytes": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "blob",
+              "mime",
+              "path",
+              "bytes"
+            ]
+          },
+          "voiceDb": {
+            "type": "number",
+            "description": "How loud the voice track is, in dB against full scale (-120 is silence)."
+          },
+          "restDb": {
+            "type": "number",
+            "description": "How loud the rest track is, in dB against full scale."
+          },
+          "durationMs": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "voice",
+          "voiceDb",
+          "restDb",
+          "durationMs"
+        ]
+      },
+      "failures": [
+        {
+          "code": 400,
+          "description": "A param is wrong, or media is missing or not sound VideoCraw decoded for the plugin."
+        },
+        {
+          "code": 404,
+          "description": "A file is not there."
+        },
+        {
+          "code": 422,
+          "description": "The video has no sound, a file cannot be read, or the model cannot be loaded."
+        },
+        {
+          "code": 503,
+          "description": "A model file could not be downloaded (they are fetched once, on first use), or VideoCraw gave the plugin no place to write the tracks. Trying again may work for the first."
+        },
+        {
+          "code": "CANCELLED",
+          "description": "The call was cancelled."
+        }
+      ]
+    }
+  }
+}
