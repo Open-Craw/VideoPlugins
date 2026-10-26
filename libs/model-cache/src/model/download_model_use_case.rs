@@ -5,11 +5,11 @@ use std::time::Duration;
 
 use sha2::{Digest, Sha256};
 
-use super::model_catalog_config::ModelSpec;
+use super::model_file_contract::ModelFile;
 
 /// Downloads `model` to `target`, checking its size and its sum, and puts it in place only when
 /// both are right: a download that stops, or a file that is not the one pinned, leaves nothing.
-pub fn download_model(model: &ModelSpec, target: &Path) -> Result<(), String> {
+pub fn download_model(model: &ModelFile, target: &Path) -> Result<(), String> {
     let folder = target
         .parent()
         .ok_or_else(|| format!("{} has no folder", target.display()))?;
@@ -23,7 +23,7 @@ pub fn download_model(model: &ModelSpec, target: &Path) -> Result<(), String> {
     std::fs::rename(&partial, target).map_err(|error| format!("{}: {error}", target.display()))
 }
 
-fn fetch(model: &ModelSpec, partial: &Path) -> Result<(), String> {
+fn fetch(model: &ModelFile, partial: &Path) -> Result<(), String> {
     let agent: ureq::Agent = ureq::Agent::config_builder()
         .timeout_global(Some(Duration::from_secs(900)))
         .build()
@@ -61,7 +61,7 @@ fn fetch(model: &ModelSpec, partial: &Path) -> Result<(), String> {
     let sum = format!("{:x}", hash.finalize());
     if sum != model.sha256 {
         return Err(format!(
-            "{} is not the file this plugin expects (sha256 {sum}, expected {})",
+            "{} is not the file expected (sha256 {sum}, expected {})",
             model.url, model.sha256
         ));
     }

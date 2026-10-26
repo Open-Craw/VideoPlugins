@@ -1,0 +1,15 @@
+[package]
+name = "videoplugins-sound-events"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata.smith]
+kind = "app"
+
+[dependencies]
+ort = "=2.0.0-rc.15"
+serde_json = "1"
+videoplugins-model-cache = { path = "../../libs/model-cache" }
+videoplugins-plugin-sdk = { path = "../../libs/plugin-sdk" }
+videoplugins-sound-reader = { path = "../../libs/sound-reader" }

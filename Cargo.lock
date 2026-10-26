@@ -1101,9 +1101,8 @@ dependencies = [
  "ort",
  "png",
  "serde_json",
- "sha2",
- "ureq",
  "videoplugins-frame-reader",
+ "videoplugins-model-cache",
  "videoplugins-plugin-sdk",
 ]
 
@@ -1124,6 +1123,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "videoplugins-model-cache"
+version = "0.0.0"
+dependencies = [
+ "sha2",
+ "ureq",
+]
+
+[[package]]
 name = "videoplugins-plugin-sdk"
 version = "0.0.0"
 dependencies = [
@@ -1136,6 +1143,17 @@ version = "0.0.0"
 dependencies = [
  "rustfft",
  "serde_json",
+ "videoplugins-plugin-sdk",
+ "videoplugins-sound-reader",
+]
+
+[[package]]
+name = "videoplugins-sound-events"
+version = "0.0.0"
+dependencies = [
+ "ort",
+ "serde_json",
+ "videoplugins-model-cache",
  "videoplugins-plugin-sdk",
  "videoplugins-sound-reader",
 ]
