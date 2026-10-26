@@ -1,28 +1,30 @@
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
-use std::sync::atomic::{AtomicU64, Ordering};
 
 use serde_json::{json, Value};
-use videoplugins_plugin_sdk::Failure;
 
-/// Writes an `rgb24` picture as a PNG in `work_dir` and describes it the way a result hands a file
-/// over: `{ "workFile": <path>, "mime": "image/png" }`. VideoCraw moves it into the result's store.
-pub fn write_picture(
+use crate::names::unique_work_file_name;
+use crate::WorkFileError;
+
+/// Writes an `rgb24` picture as a PNG named from `prefix` in `work_dir` and describes it the way a
+/// result hands a file over: `{ "workFile": <path>, "mime": "image/png" }`.
+pub fn write_png_file(
+    prefix: &str,
     rgb: &[u8],
     width: usize,
     height: usize,
     work_dir: &Path,
-) -> Result<Value, Failure> {
-    static NUMBER: AtomicU64 = AtomicU64::new(0);
-    let file = work_dir.join(format!(
-        "coco-objects-{}-{}.png",
-        std::process::id(),
-        NUMBER.fetch_add(1, Ordering::Relaxed)
-    ));
-    let broken = |error: &dyn std::fmt::Display| {
-        Failure::status(500, format!("{}: {error}", file.display()))
-    };
+) -> Result<Value, WorkFileError> {
+    let file = work_dir.join(unique_work_file_name(prefix, "png"));
+    let broken =
+        |error: &dyn std::fmt::Display| WorkFileError(format!("{}: {error}", file.display()));
+    if rgb.len() != width * height * 3 {
+        return Err(broken(&format!(
+            "{} bytes are not a picture of {width} x {height}",
+            rgb.len()
+        )));
+    }
     let output = File::create(&file).map_err(|error| broken(&error))?;
     let mut encoder = png::Encoder::new(BufWriter::new(output), width as u32, height as u32);
     encoder.set_color(png::ColorType::Rgb);
@@ -41,11 +43,11 @@ mod tests {
 
     #[test]
     fn a_picture_is_written_as_a_png_that_reads_back_the_same() {
-        let folder = std::env::temp_dir().join(format!("coco-picture-{}", std::process::id()));
+        let folder = std::env::temp_dir().join(format!("work-files-png-{}", std::process::id()));
         std::fs::create_dir_all(&folder).unwrap();
         let rgb: Vec<u8> = (0..4 * 2 * 3).map(|n| (n * 9) as u8).collect();
 
-        let handed = write_picture(&rgb, 4, 2, &folder).unwrap();
+        let handed = write_png_file("shot", &rgb, 4, 2, &folder).unwrap();
 
         assert_eq!(handed["mime"], "image/png");
         let path = handed["workFile"].as_str().unwrap();
@@ -59,9 +61,10 @@ mod tests {
     }
 
     #[test]
-    fn a_folder_that_is_not_there_is_a_500_that_names_the_file() {
-        let failure = write_picture(&[0; 3], 1, 1, Path::new("no/such/folder")).unwrap_err();
-        assert_eq!(failure.code, Some(json!(500)));
-        assert!(failure.message.contains("coco-objects-"));
+    fn a_missing_folder_and_a_wrong_size_are_errors_that_name_the_file() {
+        let error = write_png_file("shot", &[0; 3], 1, 1, Path::new("no/such/folder")).unwrap_err();
+        assert!(error.0.contains("shot-"), "{error}");
+        let error = write_png_file("shot", &[0; 5], 1, 1, &std::env::temp_dir()).unwrap_err();
+        assert!(error.0.contains("not a picture"), "{error}");
     }
 }

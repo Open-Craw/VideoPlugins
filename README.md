@@ -26,6 +26,7 @@ Then [docs/writing-good-plugins.md](docs/writing-good-plugins.md): guidance, not
 | [sound-clean](apps/sound-clean) | Rust | takes steady noise out of a sound and hands the cleaned sound to the next plugin |
 | [thumbnail](apps/thumbnail) | Rust | chooses the pictures that show a video best (sharp, well exposed, not all from one scene) |
 | [sound-events](apps/sound-events) | Rust | finds the sounds a video has from the 521 AudioSet classes (meow, bark, siren, speech, music...) with a small tagger and no language model: one event each time a sound is heard, with its time and a clip of it |
+| [visual-phrases](apps/visual-phrases) | Rust | finds when a phrase describes what a video shows ("two cats sleeping on a couch", "a red car") with an image-text model and no language model: any phrase, no fixed list of classes; one appearance each time it holds, with its first picture and time |
 | [coco-objects](apps/coco-objects) | Rust | finds the things a video shows from the 80 COCO classes (cat, person, car...) with a fast detector and no language model: one appearance for each time a class shows up, with its first picture and time |
 | [example-hits](apps/example-hits) | Rust | the reference plugin: pretends to find things |
 

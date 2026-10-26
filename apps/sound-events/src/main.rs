@@ -2,7 +2,6 @@
 //! gives a clip of each. See README.md; the protocol is spoken by the SDK in libs/plugin-sdk.
 
 mod classes;
-mod clip;
 mod events;
 mod listen;
 mod methods;

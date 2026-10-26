@@ -1,12 +1,15 @@
+use std::collections::HashMap;
+
 use serde_json::{json, Value};
+use videoplugins_appearances::{track_appearances, Presence, Sample};
 use videoplugins_frame_reader::{read_video_region, PixelFormat};
 use videoplugins_plugin_sdk::{Cancel, Failure};
+use videoplugins_work_files::write_png_file;
 
-use crate::appearances::{track_appearances, Sample};
 use crate::classes::COCO_CLASSES;
-use crate::detect::detect_objects;
+use crate::detect::{detect_objects, Detection};
 use crate::models::locate_model;
-use crate::picture::{draw_boxes, write_picture};
+use crate::picture::draw_boxes;
 
 use super::read_find_options_mapper::read_find_options;
 
@@ -40,6 +43,8 @@ pub fn find_objects(params: &Value, cancel: &Cancel) -> Result<Value, Failure> {
     let file = locate_model(options.model, cancel)?;
 
     let mut samples = Vec::with_capacity(video.frames.len());
+    // What was found in each picture, to draw the boxes of an appearance on its first one.
+    let mut found_in: HashMap<usize, Vec<Detection>> = HashMap::new();
     for (index, frame) in video.frames.iter().enumerate() {
         if cancel.is_cancelled() {
             return Err(Failure::named("CANCELLED", "cancelled"));
@@ -63,8 +68,15 @@ pub fn find_objects(params: &Value, cancel: &Cancel) -> Result<Value, Failure> {
             frame: index,
             time_ms: frame.pts_ms,
             duration_ms: frame.duration_ms,
-            found,
+            present: found
+                .iter()
+                .map(|found| Presence {
+                    key: found.class,
+                    score: found.score,
+                })
+                .collect(),
         });
+        found_in.insert(index, found);
     }
 
     let appearances = track_appearances(&samples, options.gap_ms, options.min_samples);
@@ -80,21 +92,26 @@ pub fn find_objects(params: &Value, cancel: &Cancel) -> Result<Value, Failure> {
             .pixels(appearance.first_frame)
             .ok_or_else(|| Failure::status(500, "a picture of the video went missing"))?
             .to_vec();
-        draw_boxes(
-            &mut picture,
-            video.width,
-            video.height,
-            &appearance.first_boxes,
-            2,
-        );
+        let boxes: Vec<Detection> = found_in
+            .get(&appearance.first_frame)
+            .map(|found| {
+                found
+                    .iter()
+                    .filter(|found| found.class == appearance.key)
+                    .copied()
+                    .collect()
+            })
+            .unwrap_or_default();
+        draw_boxes(&mut picture, video.width, video.height, &boxes, 2);
         described.push(json!({
-            "class": COCO_CLASSES[appearance.class],
+            "class": COCO_CLASSES[appearance.key],
             "startMs": appearance.start_ms,
             "endMs": appearance.end_ms,
             "confidence": (f64::from(appearance.confidence) * 1000.0).round() / 1000.0,
             "peakCount": appearance.peak_count,
             "samples": appearance.samples,
-            "picture": write_picture(&picture, video.width, video.height, work_dir)?,
+            "picture": write_png_file("coco-objects", &picture, video.width, video.height, work_dir)
+                .map_err(|error| Failure::status(500, error.to_string()))?,
         }));
     }
     Ok(json!({

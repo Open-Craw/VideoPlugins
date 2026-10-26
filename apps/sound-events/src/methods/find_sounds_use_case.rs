@@ -1,9 +1,9 @@
 use serde_json::{json, Value};
 use videoplugins_plugin_sdk::{Cancel, Failure};
 use videoplugins_sound_reader::read_audio_region;
+use videoplugins_work_files::write_wav_file;
 
 use crate::classes::AUDIOSET_CLASSES;
-use crate::clip::write_clip;
 use crate::events::{event_times, merge_frames};
 use crate::listen::{score_frames, CLASSES, HOP, WINDOW};
 use crate::models::locate_model;
@@ -88,7 +88,8 @@ pub fn find_sounds(params: &Value, cancel: &Cancel) -> Result<Value, Failure> {
                 .min(from + options.max_clip_ms);
             let samples =
                 &sound.samples[ms_to_sample(from)..ms_to_sample(to).min(sound.samples.len())];
-            found["clip"] = write_clip(samples, RATE, work_dir)?;
+            found["clip"] = write_wav_file("sound-events", samples, RATE, work_dir)
+                .map_err(|error| Failure::status(500, error.to_string()))?;
         }
         described.push(found);
     }

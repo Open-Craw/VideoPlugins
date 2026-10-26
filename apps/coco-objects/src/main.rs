@@ -2,7 +2,6 @@
 //! and gives the first picture of each appearance. See README.md; the protocol is spoken by the SDK
 //! in libs/plugin-sdk.
 
-mod appearances;
 mod classes;
 mod detect;
 mod methods;

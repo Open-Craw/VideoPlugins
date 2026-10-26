@@ -1,0 +1,8 @@
+[package]
+name = "videoplugins-appearances"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata.smith]
+kind = "lib"
