@@ -8,6 +8,7 @@
   "concurrency": 1,
   "processes": 1,
   "stallSeconds": 120,
+  "permissions": { "env": ["HF_HOME", "HF_HUB_CACHE", "HF_HUB_OFFLINE"], "network": ["huggingface.co"] },
   "requirements": { "cpu": 2, "memoryMb": 1500, "maxForks": 1 },
   "actions": {
     "transcribe": {

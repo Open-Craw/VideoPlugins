@@ -33,8 +33,19 @@ videocraw run recipes/ --out out/result.json --plugins ~/.videocraw/plugins
 | `requirements` | optional: what the plugin's actions need while they work, `{ "cpu": 1, "gpu": 0, "memoryMb": 0, "maxForks": n }`; an action's own `requirements` win (see Resources) |
 | `stallSeconds` | optional: how long a call may go without a `progress` message before the program is stopped and the call times out (408); without it only `timeoutSeconds` limits a call |
 | `cancelGraceSeconds` | how long a program gets to answer a cancelled call before it is stopped (default 5) |
+| `permissions` | optional: what the plugin needs beyond computing: `env` (environment variables), `network` (hosts), `read` and `write` (folders), `run` (programs). Nothing declared means nothing needed. See Environment |
 
 Unknown keys are refused. VideoCraw does not install a plugin's runtime or dependencies: the plugin brings its own or documents them.
+
+### Environment
+
+A plugin is started with an **environment of its own**: the ordinary variables every program needs (the path, the home and temporary folders, the language, the terminal and their Windows equivalents) and the ones its manifest lists in `permissions.env`. Everything else in the environment of whoever runs VideoCraw, such as API keys and tokens, is not passed on. A plugin that needs one (a cache location, say) declares it by name:
+
+```json
+"permissions": { "env": ["HF_HOME"], "network": ["huggingface.co"] }
+```
+
+Only `env` is enforced today. `network`, `read`, `write` and `run` are recorded and shown to the person who installs the plugin and by `vcw check`; they will be enforced once VideoCraw can sandbox a program on every platform, so declare them truthfully now.
 
 ## Describing the actions
 
