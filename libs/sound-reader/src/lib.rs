@@ -12,8 +12,10 @@ mod input;
 mod read;
 mod region;
 mod resample;
+mod write;
 
 pub use input::{load_sound_input, SoundInputError};
 pub use read::{read_sound, ReadSoundError, Sound};
 pub use region::read_audio_region;
 pub use resample::resample;
+pub use write::write_audio_region;

@@ -12,6 +12,18 @@ Read [docs/plugin-protocol.md](docs/plugin-protocol.md): the manifest (`plugin.j
 
 Then [docs/writing-good-plugins.md](docs/writing-good-plugins.md): guidance, not rules, on what makes a plugin pleasant to use in a workflow (report failures as failures, handle `cancel`, stay predictable).
 
+## What is here
+
+| Plugin | Language | What it does |
+|---|---|---|
+| [speech-to-text](apps/speech-to-text) | Python | writes down the sentences said, with their times (faster-whisper; can be run a window at a time) |
+| [sound-volume](apps/sound-volume) | Rust | how loud a sound is over time, with the low, mid and high bands, and where it is silent |
+| [sound-graph](apps/sound-graph) | Rust | draws the waves of a sound as an SVG, with the sentences marked |
+| [sound-clean](apps/sound-clean) | Rust | takes steady noise out of a sound and hands the cleaned sound to the next plugin |
+| [example-hits](apps/example-hits) | Rust | the reference plugin: pretends to find things |
+
+Shared code: [libs/plugin-sdk](libs/plugin-sdk) speaks the protocol for a Rust plugin (answers `hello` with its capabilities, runs every call on its own thread, cancel, progress, the work folder), and [libs/sound-reader](libs/sound-reader) reads the sound VideoCraw decoded (or any common audio file) and writes a sound for the next plugin. The speech plugin has the same in Python.
+
 ## Layout
 
 ```
@@ -21,7 +33,7 @@ apps/
     README.md             what it finds, its parameters, what it needs installed
     ...                   its own code, in its own language
 docs/
-  plugin-protocol.md      the protocol, version 1
+  plugin-protocol.md      the protocol, version 2
   writing-good-plugins.md guidance for plugin authors
 ```
 

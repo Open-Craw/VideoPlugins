@@ -43,6 +43,8 @@ pub fn serve_lines(
     let handler = Arc::new(handler);
     let running: Arc<Mutex<HashMap<u64, Cancel>>> = Arc::new(Mutex::new(HashMap::new()));
     let mut calls = Vec::new();
+    // The folder the host gave this plugin to write media in, from `hello`.
+    let mut work_dir: Option<std::path::PathBuf> = None;
 
     for line in input.lines().map_while(Result::ok) {
         let Ok(message) = serde_json::from_str::<Value>(&line) else {
@@ -50,6 +52,7 @@ pub fn serve_lines(
         };
         match message["type"].as_str() {
             Some("hello") => {
+                work_dir = message["workDir"].as_str().map(std::path::PathBuf::from);
                 if !send(&output, &ready()) {
                     return;
                 }
@@ -59,12 +62,15 @@ pub fn serve_lines(
                 let id = message["id"].clone();
                 let cancel = {
                     let output = Arc::clone(&output);
-                    Cancel::with_progress(move |note| {
-                        send(
-                            &output,
-                            &json!({ "type": "progress", "id": id, "message": note }),
-                        );
-                    })
+                    Cancel::for_call(
+                        move |note| {
+                            send(
+                                &output,
+                                &json!({ "type": "progress", "id": id, "message": note }),
+                            );
+                        },
+                        work_dir.clone(),
+                    )
                 };
                 if let Some(id) = message["id"].as_u64() {
                     lock(&running).insert(id, cancel.clone());
@@ -173,6 +179,7 @@ mod tests {
     fn plugin(action: &str, params: &Value, cancel: &Cancel) -> Result<Value, Failure> {
         match action {
             "echo" => Ok(params.clone()),
+            "where" => Ok(json!({ "workDir": cancel.work_dir().map(|dir| dir.to_string_lossy()) })),
             "fail" => Err(Failure::status(429, "busy").with_details(json!({ "after": 1 }))),
             "sleep" => {
                 let end =
@@ -239,6 +246,20 @@ mod tests {
         );
         assert_eq!(with_id(&replies, 2)["type"], "result");
         assert_eq!(with_id(&replies, 3)["code"], 404);
+    }
+
+    #[test]
+    fn the_work_folder_of_hello_reaches_the_calls() {
+        let replies = talk(&[
+            r#"{"type":"hello","protocol":2,"workDir":"/w/p"}"#,
+            r#"{"type":"call","id":1,"method":"where","params":{}}"#,
+        ]);
+        assert_eq!(with_id(&replies, 1)["result"]["workDir"], "/w/p");
+        let none = talk(&[r#"{"type":"call","id":1,"method":"where","params":{}}"#]);
+        assert_eq!(
+            with_id(&none, 1)["result"]["workDir"],
+            serde_json::Value::Null
+        );
     }
 
     #[test]

@@ -438,6 +438,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "videoplugins-sound-clean"
+version = "0.0.0"
+dependencies = [
+ "rustfft",
+ "serde_json",
+ "videoplugins-plugin-sdk",
+ "videoplugins-sound-reader",
+]
+
+[[package]]
 name = "videoplugins-sound-graph"
 version = "0.0.0"
 dependencies = [

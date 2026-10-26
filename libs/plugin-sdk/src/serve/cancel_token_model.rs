@@ -12,6 +12,7 @@ type ProgressSender = Arc<dyn Fn(&str) + Send + Sync>;
 pub struct Cancel {
     flag: Arc<AtomicBool>,
     progress: Option<ProgressSender>,
+    work_dir: Option<std::path::PathBuf>,
 }
 
 impl std::fmt::Debug for Cancel {
@@ -36,11 +37,21 @@ impl Cancel {
         }
     }
 
-    /// A token whose `progress` calls `send`.
-    pub(crate) fn with_progress(send: impl Fn(&str) + Send + Sync + 'static) -> Cancel {
+    /// The folder the host gave this plugin to write media in for the next plugin, for this run,
+    /// when it offers one: write raw sound there and answer with its description.
+    pub fn work_dir(&self) -> Option<&std::path::Path> {
+        self.work_dir.as_deref()
+    }
+
+    /// A token whose `progress` calls `send` and that knows the work folder.
+    pub(crate) fn for_call(
+        send: impl Fn(&str) + Send + Sync + 'static,
+        work_dir: Option<std::path::PathBuf>,
+    ) -> Cancel {
         Cancel {
             flag: Arc::default(),
             progress: Some(Arc::new(send)),
+            work_dir,
         }
     }
 
@@ -67,9 +78,13 @@ mod tests {
         Cancel::default().progress("nobody listens");
         let heard = Arc::new(std::sync::Mutex::new(Vec::new()));
         let sink = Arc::clone(&heard);
-        let cancel =
-            Cancel::with_progress(move |message| sink.lock().unwrap().push(message.to_string()));
+        let cancel = Cancel::for_call(
+            move |message| sink.lock().unwrap().push(message.to_string()),
+            Some(std::path::PathBuf::from("work")),
+        );
         cancel.clone().progress("half way");
         assert_eq!(*heard.lock().unwrap(), ["half way"]);
+        assert_eq!(cancel.work_dir(), Some(std::path::Path::new("work")));
+        assert_eq!(Cancel::default().work_dir(), None);
     }
 }
