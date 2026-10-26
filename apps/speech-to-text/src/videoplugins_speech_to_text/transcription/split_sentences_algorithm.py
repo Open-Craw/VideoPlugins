@@ -2,7 +2,7 @@
 
 from collections.abc import Sequence
 
-from .sentence_contract import Sentence, Word
+from .sentence_contract import Sentence, TimedWord, Word
 
 #: What ends a sentence when a word finishes with it (after any closing quote or bracket).
 _SENTENCE_ENDS = (".", "!", "?", "…", "。", "！", "？")
@@ -63,4 +63,14 @@ def _close(words: Sequence[Word]) -> Sentence:
         end_ms=round(words[-1].end * 1000),
         text=text,
         confidence=round(confidence, 3),
+        words=tuple(
+            TimedWord(
+                start_ms=round(word.start * 1000),
+                end_ms=round(word.end * 1000),
+                text=word.text.strip(),
+                confidence=round(word.probability, 3),
+            )
+            for word in words
+            if word.text.strip()
+        ),
     )

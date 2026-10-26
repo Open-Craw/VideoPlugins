@@ -161,8 +161,33 @@ def test_the_action_reads_a_stored_file_a_path_and_fails_with_the_status_that_fi
         {"model": "bad name; rm -rf"},
         {"language": "English"},
         {"skipSilence": "yes"},
+        {"words": "yes"},
         {"beamSize": 0},
         {"beamSize": True},
     ]:
         assert code_of("transcribe", {"media": str(sound), **bad}) == 400, bad
     assert code_of("sing", {"media": str(sound)}) == 404
+
+
+def test_words_are_given_only_when_asked_for_and_are_in_the_time_of_the_source() -> None:
+    model = FakeModel(SPEECH)
+    plain = transcribe_media(
+        Path("talk.mp4"), TranscribeOptions(), threading.Event(), lambda _name: model
+    )
+    assert all("words" not in sentence for sentence in plain["sentences"])
+
+    with_words = transcribe_media(
+        Path("talk.mp4"),
+        TranscribeOptions(words=True),
+        threading.Event(),
+        lambda _name: FakeModel(SPEECH),
+        offset_ms=60_000,
+    )
+    first = with_words["sentences"][0]
+    assert first["words"] == [
+        {"startMs": 60_200, "endMs": 60_600, "text": "Hello", "confidence": 0.9},
+        {"startMs": 60_600, "endMs": 61_100, "text": "world.", "confidence": 0.9},
+    ]
+    # The sentence spans its words.
+    assert first["startMs"] == first["words"][0]["startMs"]
+    assert first["endMs"] == first["words"][-1]["endMs"]

@@ -64,6 +64,10 @@ def read_options(params: dict[str, Any]) -> TranscribeOptions:
             400, f"beamSize must be a whole number from 1 to 10, not {beam_size!r}"
         )
 
+    words = params.get("words", defaults.words)
+    if not isinstance(words, bool):
+        raise Failure.status(400, f"words must be true or false, not {words!r}")
+
     return TranscribeOptions(
-        model=model, language=language, skip_silence=skip_silence, beam_size=beam_size
+        model=model, language=language, skip_silence=skip_silence, beam_size=beam_size, words=words
     )

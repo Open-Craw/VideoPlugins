@@ -10,6 +10,7 @@ The sentences said in a video or a sound, with the time each one starts and ends
 | `model` | `tiny` (about 75 MB, the default), `base`, `small`, `medium`, `large-v3`; add `.en` for English only (faster and better for English) |
 | `language` | a code such as `en` or `pt`; by default the language is found out from the first seconds |
 | `skipSilence` | skip the stretches with no speech (default `false`): it stops the model from inventing words in silence, but it can drop speech that sits over loud music (on the Sintel trailer it lost 3 of 5 sentences) |
+| `words` | give each sentence its `words`, each with `startMs`, `endMs`, `text` and `confidence` (default false) |
 | `beamSize` | how many alternatives are weighed, 1 to 10 (default 5) |
 
 It gives:

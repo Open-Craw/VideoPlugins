@@ -29,6 +29,7 @@
           "model": { "type": "string", "maxLength": 200, "description": "The speech model: tiny, base, small, medium or large-v3, with .en for English only (default tiny). Downloaded once, on first use." },
           "language": { "type": "string", "description": "The language as a code such as en or pt (default: found out from the first seconds)." },
           "skipSilence": { "type": "boolean", "description": "Skip the stretches with no speech. It stops the model from inventing words in silence, but it can drop speech that sits over loud music (default false)." },
+          "words": { "type": "boolean", "description": "Give each sentence its words, with their own start and end time and confidence (default false)." },
           "beamSize": { "type": "integer", "minimum": 1, "maximum": 10, "description": "How many alternatives are weighed: more is slower and a little better (default 5)." }
         },
         "required": ["media"],
@@ -50,7 +51,21 @@
                 "startMs": { "type": "integer", "minimum": 0 },
                 "endMs": { "type": "integer", "minimum": 0 },
                 "text": { "type": "string" },
-                "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+                "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+                "words": {
+                  "type": "array",
+                  "description": "Only when words is true: the words of the sentence, in order.",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "startMs": { "type": "integer", "minimum": 0 },
+                      "endMs": { "type": "integer", "minimum": 0 },
+                      "text": { "type": "string" },
+                      "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+                    },
+                    "required": ["startMs", "endMs", "text", "confidence"]
+                  }
+                }
               },
               "required": ["startMs", "endMs", "text", "confidence"]
             }
