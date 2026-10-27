@@ -1,6 +1,8 @@
 {
   "name": "coco-objects",
   "version": "0.1.0",
+  "title": "Find objects",
+  "description": "Finds the things a video shows from the 80 classes of the COCO set (person, cat, dog, car...) with a fast detector and no language model.",
   "protocol": 2,
   "effect": "pure",
   "command": [
@@ -28,6 +30,9 @@
   "actions": {
     "find": {
       "description": "Finds the things a video shows, from the 80 classes of the COCO set (person, cat, dog, car...), with a detector and no language model. Each time a class shows up it gives one appearance with the first picture it is in and the time; a class that stays on screen is reported once, when it first shows.",
+      "title": "Find objects",
+      "category": "find",
+      "icon": "object",
       "wants": {
         "media": {
           "media": "video",
@@ -44,7 +49,10 @@
               "object",
               "string"
             ],
-            "description": "The video: a stored file or a video as media.open gives it, or a path in text. VideoCraw decodes a colour picture of it every half second."
+            "description": "The video: a stored file or a video as media.open gives it, or a path in text. VideoCraw decodes a colour picture of it every half second.",
+            "x-ui": {
+              "group": "everyday"
+            }
           },
           "classes": {
             "type": "array",
@@ -133,6 +141,10 @@
                 "hair drier",
                 "toothbrush"
               ]
+            },
+            "x-ui": {
+              "group": "everyday",
+              "widget": "chips"
             }
           },
           "model": {
@@ -142,25 +154,44 @@
               "tiny",
               "s"
             ],
-            "description": "The detector: nano is the fastest, s the most accurate (default nano). Downloaded once, on first use."
+            "description": "The detector: nano is the fastest, s the most accurate (default nano). Downloaded once, on first use.",
+            "default": "nano",
+            "x-ui": {
+              "group": "advanced",
+              "widget": "select"
+            }
           },
           "minConfidence": {
             "type": "number",
             "minimum": 0.05,
             "maximum": 1,
-            "description": "How sure the detector must be of a thing (default 0.5)."
+            "description": "How sure the detector must be of a thing (default 0.5).",
+            "default": 0.5,
+            "x-ui": {
+              "group": "everyday",
+              "widget": "slider"
+            }
           },
           "gapMs": {
             "type": "integer",
             "minimum": 0,
             "maximum": 600000,
-            "description": "How long a class can be out of the pictures before it counts as gone; if it comes back that is another appearance (default 2000)."
+            "description": "How long a class can be out of the pictures before it counts as gone; if it comes back that is another appearance (default 2000).",
+            "default": 2000,
+            "x-ui": {
+              "group": "advanced",
+              "unit": "ms"
+            }
           },
           "minSamples": {
             "type": "integer",
             "minimum": 1,
             "maximum": 100,
-            "description": "In how few pictures a thing is still reported, so a flicker is not (default 2, which is a second)."
+            "description": "In how few pictures a thing is still reported, so a flicker is not (default 2, which is a second).",
+            "default": 2,
+            "x-ui": {
+              "group": "advanced"
+            }
           }
         },
         "required": [

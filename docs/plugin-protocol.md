@@ -79,6 +79,14 @@ A plugin can say what each of its actions takes and gives. It is optional, and w
 
 `inputs` and `outputs` are schemas in a subset of JSON Schema: `type` (`null`, `boolean`, `string`, `number`, `integer`, `array`, `object`, or a list of them), `enum`, `properties`, `required`, `additionalProperties` (true, false or a schema), `items`, `minimum`, `maximum`, `minLength`, `maxLength`, `minItems` and `maxItems`. Other keywords such as `description` or `default` are allowed and not enforced. The manifest is refused when a schema is malformed (a misspelt type, a `required` name that is not among the properties). `inputs` must describe an object. `failures` lists the failures worth knowing about, with the same codes as the `error` message, so a flow can handle them.
 
+### Showing an action to people
+
+An editor, a list or a help page shows the actions of every plugin (`videocraw actions --json` gives them all). None of this is needed to run, and the core never reads it for meaning: it is information, and a plugin can ship without any of it.
+
+- On the **plugin**: `title` (a name for a person) and `description` (what it is for, a sentence or two).
+- On an **action**: `title` ("Find objects"), `category` (`media`, `find`, `transform`, `data` or `test`: what kind of action it is, for grouping) and `icon` (a word such as `sound` or `image` that stands for it in a picture).
+- On an **input** or an **output**, inside its schema: `default` (what the plugin does when the input is left out; the plugin applies it, the core does not, so keep it true) and an `x-ui` object with `group` (`everyday` for what most people set, `advanced` for the rest), `unit` (`ms`, `dB`, `Hz`, `px`) and `widget` (`slider`, `chips`, `select`, `path`, `color`: a hint for how to ask for it; for an enum with hundreds of values `chips` means a search box).
+
 What it is used for:
 
 - **Before a run.** A flow calls the action as `plugin-name.action`. The loader checks that the action exists, that the inputs fit (required ones given, nothing the schema forbids, values of the right type) and, for an input that is an expression, the type of what it reads when that can be told (a property of another action's declared output, a parameter, a text function). It also checks every read of an action's output: the properties `outputs` lists are taken to be all of them, so `@body('Find').hitz` is found before any video is touched. Say `"additionalProperties": true` to say there are more.

@@ -1,84 +1,234 @@
 {
   "name": "speech-to-text",
   "version": "0.1.0",
+  "title": "Speech to text",
+  "description": "Writes down what is said in a video or a sound, with the time each sentence starts and ends.",
   "protocol": 2,
   "effect": "pure",
-  "command": ["python", "-m", "videoplugins_speech_to_text"],
+  "command": [
+    "python",
+    "-m",
+    "videoplugins_speech_to_text"
+  ],
   "timeoutSeconds": 3600,
   "concurrency": 1,
   "processes": 1,
   "stallSeconds": 120,
-  "permissions": { "env": ["HF_HOME", "HF_HUB_CACHE", "HF_HUB_OFFLINE"], "network": ["huggingface.co"] },
-  "requirements": { "cpu": 2, "memoryMb": 1500, "maxForks": 1 },
+  "permissions": {
+    "env": [
+      "HF_HOME",
+      "HF_HUB_CACHE",
+      "HF_HUB_OFFLINE"
+    ],
+    "network": [
+      "huggingface.co"
+    ]
+  },
+  "requirements": {
+    "cpu": 2,
+    "memoryMb": 1500,
+    "maxForks": 1
+  },
   "actions": {
     "transcribe": {
       "description": "Writes down the sentences said in a video or a sound, with the time each starts and ends. The core may run it a window of the media at a time and join the result: the sentences are joined, text is put together from them and durationMs is the whole media's; language and model are the first window's.",
-      "wants": { "media": { "media": "audio", "sampleRate": 16000, "channels": 1 } },
+      "title": "Transcribe speech",
+      "category": "find",
+      "icon": "speech",
+      "wants": {
+        "media": {
+          "media": "audio",
+          "sampleRate": 16000,
+          "channels": 1
+        }
+      },
       "window": {
         "minMs": 20000,
         "maxMs": 120000,
         "overlapMs": 5000,
         "itemsAt": "sentences",
-        "joinText": { "field": "text", "from": "text", "separator": " " },
+        "joinText": {
+          "field": "text",
+          "from": "text",
+          "separator": " "
+        },
         "durationAt": "durationMs"
       },
       "inputs": {
         "type": "object",
         "properties": {
-          "media": { "type": ["object", "string"], "description": "The video or sound: an object with an absolute file path (a stored file, or a video as media.open gives it) or a path in text." },
-          "model": { "type": "string", "maxLength": 200, "description": "The speech model: tiny, base, small, medium or large-v3, with .en for English only (default tiny). Downloaded once, on first use." },
-          "language": { "type": "string", "description": "The language as a code such as en or pt (default: found out from the first seconds)." },
-          "skipSilence": { "type": "boolean", "description": "Skip the stretches with no speech. It stops the model from inventing words in silence, but it can drop speech that sits over loud music (default false)." },
-          "words": { "type": "boolean", "description": "Give each sentence its words, with their own start and end time and confidence (default false)." },
-          "beamSize": { "type": "integer", "minimum": 1, "maximum": 10, "description": "How many alternatives are weighed: more is slower and a little better (default 5)." }
+          "media": {
+            "type": [
+              "object",
+              "string"
+            ],
+            "description": "The video or sound: an object with an absolute file path (a stored file, or a video as media.open gives it) or a path in text.",
+            "x-ui": {
+              "group": "everyday"
+            }
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "The speech model: tiny, base, small, medium or large-v3, with .en for English only (default tiny). Downloaded once, on first use.",
+            "default": "tiny",
+            "x-ui": {
+              "group": "everyday",
+              "widget": "select"
+            }
+          },
+          "language": {
+            "type": "string",
+            "description": "The language as a code such as en or pt (default: found out from the first seconds).",
+            "x-ui": {
+              "group": "everyday",
+              "widget": "select"
+            }
+          },
+          "skipSilence": {
+            "type": "boolean",
+            "description": "Skip the stretches with no speech. It stops the model from inventing words in silence, but it can drop speech that sits over loud music (default false).",
+            "default": false,
+            "x-ui": {
+              "group": "advanced"
+            }
+          },
+          "words": {
+            "type": "boolean",
+            "description": "Give each sentence its words, with their own start and end time and confidence (default false).",
+            "default": false,
+            "x-ui": {
+              "group": "advanced"
+            }
+          },
+          "beamSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10,
+            "description": "How many alternatives are weighed: more is slower and a little better (default 5).",
+            "default": 5,
+            "x-ui": {
+              "group": "advanced"
+            }
+          }
         },
-        "required": ["media"],
+        "required": [
+          "media"
+        ],
         "additionalProperties": false
       },
       "outputs": {
         "type": "object",
         "properties": {
-          "language": { "type": "string" },
-          "languageProbability": { "type": "number", "minimum": 0, "maximum": 1 },
-          "durationMs": { "type": "integer", "minimum": 0 },
-          "model": { "type": "string" },
-          "text": { "type": "string", "description": "Everything said, the sentences joined." },
+          "language": {
+            "type": "string"
+          },
+          "languageProbability": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "durationMs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "model": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string",
+            "description": "Everything said, the sentences joined."
+          },
           "sentences": {
             "type": "array",
             "items": {
               "type": "object",
               "properties": {
-                "startMs": { "type": "integer", "minimum": 0 },
-                "endMs": { "type": "integer", "minimum": 0 },
-                "text": { "type": "string" },
-                "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+                "startMs": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "endMs": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "text": {
+                  "type": "string"
+                },
+                "confidence": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
                 "words": {
                   "type": "array",
                   "description": "Only when words is true: the words of the sentence, in order.",
                   "items": {
                     "type": "object",
                     "properties": {
-                      "startMs": { "type": "integer", "minimum": 0 },
-                      "endMs": { "type": "integer", "minimum": 0 },
-                      "text": { "type": "string" },
-                      "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+                      "startMs": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "endMs": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "text": {
+                        "type": "string"
+                      },
+                      "confidence": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      }
                     },
-                    "required": ["startMs", "endMs", "text", "confidence"]
+                    "required": [
+                      "startMs",
+                      "endMs",
+                      "text",
+                      "confidence"
+                    ]
                   }
                 }
               },
-              "required": ["startMs", "endMs", "text", "confidence"]
+              "required": [
+                "startMs",
+                "endMs",
+                "text",
+                "confidence"
+              ]
             }
           }
         },
-        "required": ["language", "durationMs", "text", "sentences"]
+        "required": [
+          "language",
+          "durationMs",
+          "text",
+          "sentences"
+        ]
       },
       "failures": [
-        { "code": 400, "description": "A param is wrong or media is missing." },
-        { "code": 404, "description": "The file is not there." },
-        { "code": 422, "description": "No speech could be read from the file (it is damaged or has no audio)." },
-        { "code": 503, "description": "The model could not be loaded: usually no network the first time, or a name that is not a model." },
-        { "code": "CANCELLED", "description": "The call was cancelled." }
+        {
+          "code": 400,
+          "description": "A param is wrong or media is missing."
+        },
+        {
+          "code": 404,
+          "description": "The file is not there."
+        },
+        {
+          "code": 422,
+          "description": "No speech could be read from the file (it is damaged or has no audio)."
+        },
+        {
+          "code": 503,
+          "description": "The model could not be loaded: usually no network the first time, or a name that is not a model."
+        },
+        {
+          "code": "CANCELLED",
+          "description": "The call was cancelled."
+        }
       ]
     }
   }

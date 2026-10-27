@@ -1,6 +1,8 @@
 {
   "name": "sound-events",
   "version": "0.1.0",
+  "title": "Find sounds",
+  "description": "Finds the sounds a video has from the 521 classes of AudioSet (speech, music, meow, bark, siren...) with a small tagger and no language model.",
   "protocol": 2,
   "effect": "pure",
   "command": [
@@ -28,6 +30,9 @@
   "actions": {
     "find": {
       "description": "Finds the sounds a video has, from the 521 classes of AudioSet (speech, music, cat, meow, dog, bark, siren, door...), with a small neural tagger and no language model. Each time a sound is heard it gives one event with its start and end and a clip of it; a sound that goes on is one event.",
+      "title": "Find sounds",
+      "category": "find",
+      "icon": "sound",
       "wants": {
         "media": {
           "media": "audio",
@@ -43,7 +48,10 @@
               "object",
               "string"
             ],
-            "description": "The video or sound: a stored file or a video as media.open gives it, or a path in text. VideoCraw decodes its sound to 16 kHz, one channel."
+            "description": "The video or sound: a stored file or a video as media.open gives it, or a path in text. VideoCraw decodes its sound to 16 kHz, one channel.",
+            "x-ui": {
+              "group": "everyday"
+            }
           },
           "labels": {
             "type": "array",
@@ -573,41 +581,73 @@
                 "Radio",
                 "Field recording"
               ]
+            },
+            "x-ui": {
+              "group": "everyday",
+              "widget": "chips"
             }
           },
           "minConfidence": {
             "type": "number",
             "minimum": 0.05,
             "maximum": 1,
-            "description": "How sure the tagger must be of a sound (default 0.5)."
+            "description": "How sure the tagger must be of a sound (default 0.5).",
+            "default": 0.5,
+            "x-ui": {
+              "group": "everyday",
+              "widget": "slider"
+            }
           },
           "gapMs": {
             "type": "integer",
             "minimum": 0,
             "maximum": 600000,
-            "description": "How long a sound can stop before it counts as gone; if it comes back that is another event (default 1000)."
+            "description": "How long a sound can stop before it counts as gone; if it comes back that is another event (default 1000).",
+            "default": 1000,
+            "x-ui": {
+              "group": "advanced",
+              "unit": "ms"
+            }
           },
           "minFrames": {
             "type": "integer",
             "minimum": 1,
             "maximum": 100,
-            "description": "In how few frames (about half a second apart) a sound is still reported (default 1)."
+            "description": "In how few frames (about half a second apart) a sound is still reported (default 1).",
+            "default": 1,
+            "x-ui": {
+              "group": "advanced"
+            }
           },
           "clips": {
             "type": "boolean",
-            "description": "Give a clip of each event (default true)."
+            "description": "Give a clip of each event (default true).",
+            "default": true,
+            "x-ui": {
+              "group": "advanced"
+            }
           },
           "clipPadMs": {
             "type": "integer",
             "minimum": 0,
             "maximum": 5000,
-            "description": "How much sound before and after an event goes in its clip (default 250)."
+            "description": "How much sound before and after an event goes in its clip (default 250).",
+            "default": 250,
+            "x-ui": {
+              "group": "advanced",
+              "unit": "ms"
+            }
           },
           "maxClipMs": {
             "type": "integer",
             "minimum": 1000,
             "maximum": 60000,
-            "description": "The longest a clip can be; a longer event is cut short from its start (default 10000)."
+            "description": "The longest a clip can be; a longer event is cut short from its start (default 10000).",
+            "default": 10000,
+            "x-ui": {
+              "group": "advanced",
+              "unit": "ms"
+            }
           }
         },
         "required": [

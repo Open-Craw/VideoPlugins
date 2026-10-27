@@ -55,4 +55,37 @@ mod tests {
             assert_eq!(failure.code, Some(json!(400)), "{bad}");
         }
     }
+
+    /// The manifest of this plugin, for the tests below.
+    fn inputs() -> Value {
+        let manifest: Value = serde_json::from_str(include_str!("../../plugin.json")).unwrap();
+        manifest["actions"]["extract"]["inputs"]["properties"].clone()
+    }
+
+    #[test]
+    fn every_input_of_the_manifest_has_a_group_for_an_editor() {
+        for (name, schema) in inputs().as_object().unwrap() {
+            let group = schema["x-ui"]["group"].as_str();
+            assert!(
+                matches!(group, Some("everyday" | "advanced")),
+                "the input {name} says no group"
+            );
+        }
+    }
+
+    #[test]
+    fn the_defaults_the_manifest_states_are_the_ones_the_code_uses() {
+        let inputs = inputs();
+        let options = read_extract_options(&json!({})).unwrap();
+        assert_eq!(
+            inputs["keep"]["default"].as_f64().unwrap() as f32,
+            options.keep
+        );
+        assert_eq!(
+            inputs["sampleRate"]["default"].as_u64().unwrap() as u32,
+            options.sample_rate
+        );
+        assert_eq!(inputs["rest"]["default"].as_bool().unwrap(), options.rest);
+        assert_eq!(inputs["files"]["default"].as_bool().unwrap(), options.files);
+    }
 }

@@ -1,6 +1,8 @@
 {
   "name": "voice-extractor",
   "version": "0.1.0",
+  "title": "Voice extractor",
+  "description": "Splits the sound of a video into the voice and the rest. Optional: it does not reliably improve speech-to-text.",
   "protocol": 2,
   "effect": "pure",
   "command": [
@@ -28,6 +30,9 @@
   "actions": {
     "extract": {
       "description": "Splits the sound of a video into the voice and the rest, with DeepFilterNet3: the voice is what a speech-enhancement network keeps, the rest is what it took out (it is not clean: some of the voice stays in it). Each track is given in a form the next plugin can read directly (speech-to-text on the voice, sound-events on the rest), and as a WAV file in the result when asked.",
+      "title": "Extract the voice",
+      "category": "transform",
+      "icon": "voice",
       "wants": {
         "media": {
           "media": "audio",
@@ -43,13 +48,21 @@
               "object",
               "string"
             ],
-            "description": "The video or sound: a stored file or a video as media.open gives it, or a path in text. VideoCraw decodes its sound to 48 kHz, one channel."
+            "description": "The video or sound: a stored file or a video as media.open gives it, or a path in text. VideoCraw decodes its sound to 48 kHz, one channel.",
+            "x-ui": {
+              "group": "everyday"
+            }
           },
           "keep": {
             "type": "number",
             "minimum": 0,
             "maximum": 1,
-            "description": "How much of the original sound is added back into the voice (default 0: the voice as the network makes it). A little (0.15) hides the artifacts of the network and lets some of the noise through."
+            "description": "How much of the original sound is added back into the voice (default 0: the voice as the network makes it). A little (0.15) hides the artifacts of the network and lets some of the noise through.",
+            "default": 0,
+            "x-ui": {
+              "group": "advanced",
+              "widget": "slider"
+            }
           },
           "sampleRate": {
             "type": "integer",
@@ -57,15 +70,28 @@
               16000,
               48000
             ],
-            "description": "The rate of the tracks given (default 16000, what the speech and sound plugins take)."
+            "description": "The rate of the tracks given (default 16000, what the speech and sound plugins take).",
+            "default": 16000,
+            "x-ui": {
+              "group": "advanced",
+              "unit": "Hz"
+            }
           },
           "rest": {
             "type": "boolean",
-            "description": "Give the rest as well as the voice (default true)."
+            "description": "Give the rest as well as the voice (default true).",
+            "default": true,
+            "x-ui": {
+              "group": "advanced"
+            }
           },
           "files": {
             "type": "boolean",
-            "description": "Give each track as a WAV file in the result too, as voiceFile and restFile (default false)."
+            "description": "Give each track as a WAV file in the result too, as voiceFile and restFile (default false).",
+            "default": false,
+            "x-ui": {
+              "group": "advanced"
+            }
           }
         },
         "required": [

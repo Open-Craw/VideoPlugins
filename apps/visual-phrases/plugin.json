@@ -1,6 +1,8 @@
 {
   "name": "visual-phrases",
   "version": "0.1.0",
+  "title": "Find what a phrase describes",
+  "description": "Finds when a phrase you write (\"two cats sleeping on a couch\") describes what a video shows, with an image-text model.",
   "protocol": 2,
   "effect": "pure",
   "command": [
@@ -28,6 +30,9 @@
   "actions": {
     "find": {
       "description": "Finds when a phrase describes what a video shows (\"two cats sleeping on a couch\", \"a red car\", \"a person skiing\"), with an image-text model and no language model. Any phrase works, with no fixed list of classes. For each phrase it gives one appearance each time it holds, with the first picture and the time; a phrase that stays true is one appearance.",
+      "title": "Find what a phrase describes",
+      "category": "find",
+      "icon": "image-search",
       "wants": {
         "media": {
           "media": "video",
@@ -44,7 +49,10 @@
               "object",
               "string"
             ],
-            "description": "The video: a stored file or a video as media.open gives it, or a path in text. VideoCraw decodes a colour picture of it every second."
+            "description": "The video: a stored file or a video as media.open gives it, or a path in text. VideoCraw decodes a colour picture of it every second.",
+            "x-ui": {
+              "group": "everyday"
+            }
           },
           "phrases": {
             "type": "array",
@@ -55,25 +63,43 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 200
+            },
+            "x-ui": {
+              "group": "everyday",
+              "widget": "phrases"
             }
           },
           "minConfidence": {
             "type": "number",
             "minimum": 0.01,
             "maximum": 1,
-            "description": "How sure the model must be that a phrase describes a picture (default 0.1). The scores of this kind of model are low for short phrases: a good match is often 0.2 to 0.6."
+            "description": "How sure the model must be that a phrase describes a picture (default 0.1). The scores of this kind of model are low for short phrases: a good match is often 0.2 to 0.6.",
+            "default": 0.1,
+            "x-ui": {
+              "group": "everyday",
+              "widget": "slider"
+            }
           },
           "gapMs": {
             "type": "integer",
             "minimum": 0,
             "maximum": 600000,
-            "description": "How long a phrase can stop being true before it counts as over; if it comes back that is another appearance (default 2000)."
+            "description": "How long a phrase can stop being true before it counts as over; if it comes back that is another appearance (default 2000).",
+            "default": 2000,
+            "x-ui": {
+              "group": "advanced",
+              "unit": "ms"
+            }
           },
           "minSamples": {
             "type": "integer",
             "minimum": 1,
             "maximum": 100,
-            "description": "In how few pictures (a second apart) a phrase is still reported, so a flicker is not (default 1)."
+            "description": "In how few pictures (a second apart) a phrase is still reported, so a flicker is not (default 1).",
+            "default": 1,
+            "x-ui": {
+              "group": "advanced"
+            }
           }
         },
         "required": [
