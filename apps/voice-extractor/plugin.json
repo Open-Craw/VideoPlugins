@@ -104,11 +104,17 @@
         "properties": {
           "voice": {
             "type": "object",
-            "description": "The track, described as VideoCraw describes decoded sound (kind audio, f32le, file, sampleRate, channels, sampleCount, startMs...). Give it to an action that wants sound; it is good for this run only."
+            "description": "The track, described as VideoCraw describes decoded sound (kind audio, f32le, file, sampleRate, channels, sampleCount, startMs...). Give it to an action that wants sound; it is good for this run only.",
+            "x-ui": {
+              "kind": "sound"
+            }
           },
           "rest": {
             "type": "object",
-            "description": "The track, described as VideoCraw describes decoded sound (kind audio, f32le, file, sampleRate, channels, sampleCount, startMs...). Give it to an action that wants sound; it is good for this run only."
+            "description": "The track, described as VideoCraw describes decoded sound (kind audio, f32le, file, sampleRate, channels, sampleCount, startMs...). Give it to an action that wants sound; it is good for this run only.",
+            "x-ui": {
+              "kind": "sound"
+            }
           },
           "voiceFile": {
             "type": "object",

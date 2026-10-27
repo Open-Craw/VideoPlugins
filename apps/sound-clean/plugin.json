@@ -76,7 +76,10 @@
         "properties": {
           "audio": {
             "type": "object",
-            "description": "The cleaned sound, described as VideoCraw describes decoded sound (kind audio, f32le, file, sampleRate, channels, sampleCount, startMs...). Give it to an action that wants sound; it is good for this run only."
+            "description": "The cleaned sound, described as VideoCraw describes decoded sound (kind audio, f32le, file, sampleRate, channels, sampleCount, startMs...). Give it to an action that wants sound; it is good for this run only.",
+            "x-ui": {
+              "kind": "sound"
+            }
           },
           "reducedDb": {
             "type": "number",
