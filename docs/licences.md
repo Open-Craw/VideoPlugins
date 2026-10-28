@@ -301,7 +301,7 @@ Regenerate with `python tools/list_licences.py <this repository> --python <its p
 
 ## Policy for adding a dependency to a plugin
 
-The same as for VideoCraw: permissive licences (MIT, Apache-2.0, BSD, ISC, Zlib, Unlicense, CC0, Unicode), or a written decision before anything else goes in. Nothing licensed under the GPL family goes into a plugin that VideoCraw distributes. A model or data file is recorded with its licence next to the plugin that uses it.
+Each plugin has its own licence, chosen for that plugin (decision of the maintainer, 2026-10-28): MIT where its dependencies allow it, and a copyleft licence such as the GPL where a dependency requires it. A plugin is a separate program that VideoCraw starts and talks to; the core never links plugin code, so the licence of a plugin does not reach the core. What a plugin needs to hold to: its licence is written in its folder, every dependency's licence is compatible with it (this page lists them), and a dependency under a stricter licence than the plugin's is a written decision (an issue or a line here) before it goes in. VideoCraw's own rule for the core stays stricter and is in its `docs/licences.md`. A model or data file is recorded with its licence next to the plugin that uses it.
 
 ## Still open
 
