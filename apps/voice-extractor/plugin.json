@@ -113,7 +113,10 @@
             "type": "object",
             "description": "The track, described as VideoCraw describes decoded sound (kind audio, f32le, file, sampleRate, channels, sampleCount, startMs...). Give it to an action that wants sound; it is good for this run only.",
             "x-ui": {
-              "kind": "sound"
+              "kind": "sound",
+              "when": {
+                "rest": true
+              }
             }
           },
           "voiceFile": {
@@ -139,7 +142,12 @@
               "mime",
               "path",
               "bytes"
-            ]
+            ],
+            "x-ui": {
+              "when": {
+                "files": true
+              }
+            }
           },
           "restFile": {
             "type": "object",
@@ -164,7 +172,12 @@
               "mime",
               "path",
               "bytes"
-            ]
+            ],
+            "x-ui": {
+              "when": {
+                "files": true
+              }
+            }
           },
           "voiceDb": {
             "type": "number",
