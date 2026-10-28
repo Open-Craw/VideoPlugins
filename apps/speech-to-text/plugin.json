@@ -24,6 +24,19 @@
       "huggingface.co"
     ]
   },
+  "dependencies": [
+    {
+      "runtime": "python",
+      "minVersion": "3.12",
+      "packages": [
+        "faster-whisper>=1.1,<2",
+        "av>=11,<17"
+      ],
+      "paths": [
+        "src"
+      ]
+    }
+  ],
   "requirements": {
     "cpu": 2,
     "memoryMb": 1500,
