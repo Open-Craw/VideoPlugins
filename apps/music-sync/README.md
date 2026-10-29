@@ -47,6 +47,16 @@ The flow runs once for each video. To find the music that goes with each one, li
 
 then give `@body('One').path` to `findOffset` and `replaceAudio`. A video with no music of its name fails with that message and the others carry on. Any other field can be matched the same way (`name`, `extension`, `mime`, `directory`).
 
+### Trying it
+
+`examples/replace-music.json` is the whole flow: put the videos in `videos/` and the good-quality musics in `music/`, each music named like its video (`song.mp4` and `song.flac`), and run it from that folder:
+
+```
+videocraw run replace-music.json --out result.json --plugins <VideoPlugins>/apps
+```
+
+The new videos are `<name>-better.mp4` next to `result.json`, and the result lists the offset, speed and score of each. In the editor, open the same file; the folders are set in the "Your videos" step (videos) and in the "List files" step (music).
+
 ## Keeping the video's speed or the music's
 
 When `speed` is not 1 the two cannot both keep their speed. `media.replaceAudio` takes `speed` and `keep`:
