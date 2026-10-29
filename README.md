@@ -28,6 +28,7 @@ Then [docs/writing-good-plugins.md](docs/writing-good-plugins.md): guidance, not
 | [sound-events](apps/sound-events) | Rust | finds the sounds a video has from the 521 AudioSet classes (meow, bark, siren, speech, music...) with a small tagger and no language model: one event each time a sound is heard, with its time and a clip of it |
 | [voice-extractor](apps/voice-extractor) | Rust | splits a video's sound into the voice and the rest with a speech-enhancement network (DeepFilterNet3); each track can go straight to the next plugin. Optional: it does not reliably improve speech-to-text (see its README) |
 | [visual-phrases](apps/visual-phrases) | Rust | finds when a phrase describes what a video shows ("two cats sleeping on a couch", "a red car") with an image-text model and no language model: any phrase, no fixed list of classes; one appearance each time it holds, with its first picture and time |
+| [music-sync](apps/music-sync) | Rust | finds where a music starts inside a video's sound, so a high-quality copy of the music can replace the video's (with `media.replaceAudio` and its `offsetMs`) |
 | [coco-objects](apps/coco-objects) | Rust | finds the things a video shows from the 80 COCO classes (cat, person, car...) with a fast detector and no language model: one appearance for each time a class shows up, with its first picture and time |
 | [example-hits](apps/example-hits) | Rust | the reference plugin: pretends to find things |
 

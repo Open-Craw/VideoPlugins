@@ -1,0 +1,148 @@
+{
+  "name": "music-sync",
+  "version": "0.1.0",
+  "title": "Music sync",
+  "description": "Finds where a music starts inside a video's sound, so a better copy of the music can replace it.",
+  "protocol": 2,
+  "effect": "pure",
+  "command": [
+    "../../dist/cargo/release/videoplugins-music-sync"
+  ],
+  "timeoutSeconds": 600,
+  "concurrency": 2,
+  "requirements": {
+    "cpu": 1,
+    "memoryMb": 1500
+  },
+  "actions": {
+    "findOffset": {
+      "title": "Find where the music starts",
+      "category": "find",
+      "icon": "music",
+      "description": "Tells how late a music starts on a video's timeline by comparing the two sounds, however different their quality. Give the number to media.replaceAudio as offsetMs to put a high-quality copy of the music in the video.",
+      "wants": {
+        "video": {
+          "media": "audio",
+          "sampleRate": 8000,
+          "channels": 1
+        },
+        "music": {
+          "media": "audio",
+          "sampleRate": 8000,
+          "channels": 1
+        }
+      },
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "video": {
+            "type": [
+              "object",
+              "string"
+            ],
+            "x-ui": {
+              "group": "everyday"
+            },
+            "description": "The video, or any sound, that carries the music in low quality."
+          },
+          "music": {
+            "type": [
+              "object",
+              "string"
+            ],
+            "x-ui": {
+              "group": "everyday"
+            },
+            "description": "The music in good quality: a sound file or a video."
+          },
+          "minScoreSigma": {
+            "type": "number",
+            "minimum": 2,
+            "maximum": 100,
+            "default": 30,
+            "description": "How far the best match must stand out from chance. Below it the call fails with 422 (no match), so a wrong music is never put in a video.",
+            "x-ui": {
+              "group": "advanced"
+            }
+          },
+          "minOverlapMs": {
+            "type": "integer",
+            "minimum": 500,
+            "maximum": 1800000,
+            "default": 5000,
+            "description": "The least the two sounds must share.",
+            "x-ui": {
+              "group": "advanced",
+              "unit": "ms"
+            }
+          }
+        },
+        "required": [
+          "video",
+          "music"
+        ]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "offsetMs": {
+            "type": "integer",
+            "description": "How late the music starts on the video's timeline, in milliseconds. Negative when the video starts partway into the music. Give it to media.replaceAudio as offsetMs.",
+            "x-ui": {
+              "unit": "ms"
+            }
+          },
+          "score": {
+            "type": "number",
+            "description": "How far the match stands out from chance, in standard deviations (a real copy scores in the hundreds or more; unrelated music can reach about 15)."
+          },
+          "overlapMs": {
+            "type": "integer",
+            "description": "How much of the music lies inside the video.",
+            "x-ui": {
+              "unit": "ms"
+            }
+          },
+          "driftMs": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "How much the offset changes from the start to the end of what they share. About 0 for a copy at the same speed; a larger number means the video was sped up or slowed down and one offset cannot line it up everywhere. Null when the shared stretch is too short to tell.",
+            "x-ui": {
+              "unit": "ms"
+            }
+          }
+        },
+        "required": [
+          "offsetMs",
+          "score",
+          "overlapMs",
+          "driftMs"
+        ]
+      },
+      "failures": [
+        {
+          "code": 400,
+          "description": "A param is wrong or video or music is missing."
+        },
+        {
+          "code": 404,
+          "description": "A file is not there."
+        },
+        {
+          "code": 413,
+          "description": "A sound is longer than 30 minutes."
+        },
+        {
+          "code": 422,
+          "description": "No match (not the same music), the sounds are silent, or a file is not a sound this plugin can read."
+        },
+        {
+          "code": "CANCELLED",
+          "description": "The call was cancelled."
+        }
+      ]
+    }
+  }
+}

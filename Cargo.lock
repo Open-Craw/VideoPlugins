@@ -1644,6 +1644,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "videoplugins-music-sync"
+version = "0.0.0"
+dependencies = [
+ "rustfft",
+ "serde_json",
+ "videoplugins-plugin-sdk",
+ "videoplugins-sound-reader",
+]
+
+[[package]]
 name = "videoplugins-plugin-sdk"
 version = "0.0.0"
 dependencies = [
