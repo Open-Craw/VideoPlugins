@@ -2,7 +2,7 @@ use serde_json::{json, Value};
 use videoplugins_plugin_sdk::{number, whole_number, Cancel, Failure};
 use videoplugins_sound_reader::{load_sound_input, Sound};
 
-use crate::alignment::{find_alignment, measure_drift_ms, AlignmentOptions};
+use crate::alignment::{locate_music, AlignmentOptions, Unplaced};
 
 /// The rate both sounds are listened at: enough to tell a song by its notes and rhythm, small
 /// enough to compare half an hour of sound in memory.
@@ -10,14 +10,17 @@ const LISTEN_RATE: u32 = 8_000;
 /// The longest sound it compares, in milliseconds.
 const LONGEST_MS: u64 = 30 * 60 * 1000;
 
-/// The `findOffset` action: where `music` starts on the timeline of `video`'s sound.
+/// The `findOffset` action: how `music` lies on the timeline of `video`'s sound.
 ///
 /// Params: `video` and `music` (both sounds, or a video for its sound), `minScoreSigma` (2 to 100,
-/// default 30: how far the best match must stand out from chance, below it the call fails with 422)
-/// and `minOverlapMs` (default 5000: the least the two must share). It gives `offsetMs` (how late
-/// the music starts on the video's timeline; negative when the video starts partway into the
-/// music), `score`, `overlapMs` and `driftMs` (how much the offset changes from the start to the
-/// end of what they share, null when it cannot be told).
+/// default 30: how far the best match over the whole length must stand out from chance; below it
+/// the call still succeeds when three or more pieces of the music agree on a line, and fails with
+/// 422 otherwise) and `minOverlapMs` (default 5000: the least the two must share). It gives
+/// `offsetMs` (where the music's start falls on the video's timeline; negative when the video starts
+/// partway into the music), `speed` (how much longer the video takes than the music for the same
+/// stretch: 1 for the same speed, 1.05 when the video plays the music 5% slower), `score`,
+/// `overlapMs` and `piecesOnLine` (how many pieces of the music agreed on the speed, null when too
+/// few were found to tell).
 pub fn find_music_offset(params: &Value, cancel: &Cancel) -> Result<Value, Failure> {
     let min_score = number(params, "minScoreSigma", 30.0, 2.0, 100.0)?;
     let min_overlap_ms = whole_number(params, "minOverlapMs", 5_000, 500, LONGEST_MS)?;
@@ -36,47 +39,40 @@ pub fn find_music_offset(params: &Value, cancel: &Cancel) -> Result<Value, Failu
             ));
         }
     }
-    cancel.progress("comparing");
     let options = AlignmentOptions {
         sample_rate: LISTEN_RATE,
         min_overlap: (min_overlap_ms * u64::from(LISTEN_RATE) / 1000) as usize,
     };
-    let found = find_alignment(&video.samples, &music.samples, options).ok_or_else(|| {
-        Failure::status(
-            422,
-            "the sounds are too short or too quiet to compare (are they silent?)",
-        )
-    })?;
+    cancel.progress("comparing");
+    let located = locate_music(&video.samples, &music.samples, options, min_score).map_err(
+        |unplaced| match unplaced {
+            Unplaced::Silent => Failure::status(
+                422,
+                "the sounds are too short or too quiet to compare (are they silent?)",
+            ),
+            Unplaced::NoMatch(best) => Failure::status(
+                422,
+                format!(
+                    "no match: the best one stands out {:.1} times the spread of chance, less than the {min_score} asked for, and no speed made pieces of the music agree. Is this the same music?",
+                    best.score
+                ),
+            )
+            .with_details(json!({ "score": best.score, "offsetMs": best.offset_ms(LISTEN_RATE) })),
+        },
+    )?;
     if cancel.is_cancelled() {
         return Err(Failure::named("CANCELLED", "cancelled"));
     }
-    if found.score < min_score {
-        return Err(Failure::status(
-            422,
-            format!(
-                "no match: the best one stands out {:.1} times the spread of chance, less than the {min_score} asked for. Is this the same music?",
-                found.score
-            ),
-        )
-        .with_details(json!({ "score": found.score, "offsetMs": found.offset_ms(LISTEN_RATE) })));
-    }
-    cancel.progress("checking the speed");
-    let rate = LISTEN_RATE as usize;
-    let drift_ms = measure_drift_ms(
-        &video.samples,
-        &music.samples,
-        found.delay,
-        LISTEN_RATE,
-        4 * rate,
-        2 * rate,
-    );
-    let shared_start = found.delay.max(0);
-    let shared_end = (found.delay + music.samples.len() as isize).min(video.samples.len() as isize);
+    let rate = f64::from(LISTEN_RATE);
+    let shared_start = located.offset.max(0.0);
+    let shared_end = (located.offset + located.speed * music.samples.len() as f64)
+        .min(video.samples.len() as f64);
     Ok(json!({
-        "offsetMs": found.offset_ms(LISTEN_RATE),
-        "score": (found.score * 10.0).round() / 10.0,
-        "overlapMs": (shared_end - shared_start).max(0) as u64 * 1000 / u64::from(LISTEN_RATE),
-        "driftMs": drift_ms.map(|ms| ms.round()),
+        "offsetMs": (located.offset * 1000.0 / rate).round() as i64,
+        "speed": (located.speed * 1_000_000.0).round() / 1_000_000.0,
+        "score": (located.score * 10.0).round() / 10.0,
+        "overlapMs": ((shared_end - shared_start).max(0.0) * 1000.0 / rate) as u64,
+        "piecesOnLine": located.pieces,
     }))
 }
 

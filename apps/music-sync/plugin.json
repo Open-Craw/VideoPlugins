@@ -19,7 +19,7 @@
       "title": "Find where the music starts",
       "category": "find",
       "icon": "music",
-      "description": "Tells how late a music starts on a video's timeline by comparing the two sounds, however different their quality. Give the number to media.replaceAudio as offsetMs to put a high-quality copy of the music in the video.",
+      "description": "Tells how the music lies on a video's timeline by comparing the two sounds, however different their quality: how late it starts and, when the video runs at another speed, how much slower or faster. Give offsetMs and speed to media.replaceAudio to put a high-quality copy of the music in the video.",
       "wants": {
         "video": {
           "media": "audio",
@@ -60,7 +60,7 @@
             "minimum": 2,
             "maximum": 100,
             "default": 30,
-            "description": "How far the best match must stand out from chance. Below it the call fails with 422 (no match), so a wrong music is never put in a video.",
+            "description": "How far the best match over the whole length must stand out from chance. Below it the call still succeeds if three or more pieces of the music agree on a speed, and fails with 422 (no match) otherwise, so a wrong music is never put in a video.",
             "x-ui": {
               "group": "advanced"
             }
@@ -87,14 +87,14 @@
         "properties": {
           "offsetMs": {
             "type": "integer",
-            "description": "How late the music starts on the video's timeline, in milliseconds. Negative when the video starts partway into the music. Give it to media.replaceAudio as offsetMs.",
+            "description": "Where the music's start falls on the video's timeline, in milliseconds. Negative when the video starts partway into the music. Give it to media.replaceAudio as offsetMs.",
             "x-ui": {
               "unit": "ms"
             }
           },
           "score": {
             "type": "number",
-            "description": "How far the match stands out from chance, in standard deviations (a real copy scores in the hundreds or more; unrelated music can reach about 15)."
+            "description": "How far the match over the whole length stands out from chance, in standard deviations (a real copy at the same speed scores in the hundreds or more; unrelated music can reach about 15). 0 when only pieces of the music matched, as with a video at another speed."
           },
           "overlapMs": {
             "type": "integer",
@@ -103,22 +103,24 @@
               "unit": "ms"
             }
           },
-          "driftMs": {
+          "speed": {
+            "type": "number",
+            "description": "How much longer the video takes than the music for the same stretch: 1 for the same speed, 1.05 when the video plays the music 5% slower. Give it to media.replaceAudio as speed, with keep to say which one keeps its speed."
+          },
+          "piecesOnLine": {
             "type": [
-              "number",
+              "integer",
               "null"
             ],
-            "description": "How much the offset changes from the start to the end of what they share. About 0 for a copy at the same speed; a larger number means the video was sped up or slowed down and one offset cannot line it up everywhere. Null when the shared stretch is too short to tell.",
-            "x-ui": {
-              "unit": "ms"
-            }
+            "description": "How many pieces of the music agreed on the speed; null when too few were found to tell (the speed is then 1)."
           }
         },
         "required": [
           "offsetMs",
+          "speed",
           "score",
           "overlapMs",
-          "driftMs"
+          "piecesOnLine"
         ]
       },
       "failures": [
