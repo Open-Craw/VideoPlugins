@@ -36,6 +36,7 @@
         "type": "object",
         "properties": {
           "video": {
+            "title": "Video with the music in low quality",
             "type": [
               "object",
               "string"
@@ -46,6 +47,7 @@
             "description": "The video, or any sound, that carries the music in low quality."
           },
           "music": {
+            "title": "Music in good quality",
             "type": [
               "object",
               "string"
@@ -56,6 +58,7 @@
             "description": "The music in good quality: a sound file or a video."
           },
           "minScoreSigma": {
+            "title": "How sure the match must be",
             "type": "number",
             "minimum": 2,
             "maximum": 100,
@@ -66,6 +69,7 @@
             }
           },
           "minOverlapMs": {
+            "title": "Least they must share",
             "type": "integer",
             "minimum": 500,
             "maximum": 1800000,
@@ -86,6 +90,7 @@
         "type": "object",
         "properties": {
           "offsetMs": {
+            "title": "Music starts at",
             "type": "integer",
             "description": "Where the music's start falls on the video's timeline, in milliseconds. Negative when the video starts partway into the music. Give it to media.replaceAudio as offsetMs.",
             "x-ui": {
@@ -93,10 +98,12 @@
             }
           },
           "score": {
+            "title": "Match strength",
             "type": "number",
             "description": "How far the match over the whole length stands out from chance, in standard deviations (a real copy at the same speed scores in the hundreds or more; unrelated music can reach about 15). 0 when only pieces of the music matched, as with a video at another speed."
           },
           "overlapMs": {
+            "title": "Shared length",
             "type": "integer",
             "description": "How much of the music lies inside the video.",
             "x-ui": {
@@ -104,10 +111,12 @@
             }
           },
           "speed": {
+            "title": "Speed of the video against the music",
             "type": "number",
             "description": "How much longer the video takes than the music for the same stretch: 1 for the same speed, 1.05 when the video plays the music 5% slower. Give it to media.replaceAudio as speed, with keep to say which one keeps its speed."
           },
           "piecesOnLine": {
+            "title": "Pieces that agreed",
             "type": [
               "integer",
               "null"

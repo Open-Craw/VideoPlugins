@@ -20,21 +20,25 @@
         "type": "object",
         "properties": {
           "durationMs": {
+            "title": "Length",
             "type": "integer",
             "minimum": 0,
             "description": "Length of the video in milliseconds."
           },
           "everyMs": {
+            "title": "A hit every",
             "type": "integer",
             "minimum": 1,
             "description": "A hit every this many milliseconds (default 1000)."
           },
           "lengthMs": {
+            "title": "Length of a hit",
             "type": "integer",
             "minimum": 0,
             "description": "How long a hit lasts (default 500)."
           },
           "label": {
+            "title": "Label of each hit",
             "type": "string",
             "description": "The label of every hit (default hit)."
           }
@@ -48,17 +52,21 @@
         "type": "object",
         "properties": {
           "hits": {
+            "title": "Hits",
             "type": "array",
             "items": {
               "type": "object",
               "properties": {
                 "startMs": {
+                  "title": "Start",
                   "type": "integer"
                 },
                 "endMs": {
+                  "title": "End",
                   "type": "integer"
                 },
                 "label": {
+                  "title": "Label of each hit",
                   "type": "string"
                 }
               },
@@ -84,9 +92,11 @@
         "type": "object",
         "properties": {
           "audio": {
+            "title": "Sound",
             "type": "object",
             "properties": {
               "file": {
+                "title": "File",
                 "type": "string",
                 "description": "The absolute path VideoCraw gives a stored file."
               }
@@ -104,6 +114,7 @@
         "type": "object",
         "properties": {
           "bytes": {
+            "title": "Size in bytes",
             "type": "integer",
             "minimum": 0
           }
@@ -132,6 +143,7 @@
         "type": "object",
         "properties": {
           "ms": {
+            "title": "Time to wait",
             "type": "integer",
             "minimum": 0
           }
@@ -144,6 +156,7 @@
         "type": "object",
         "properties": {
           "waitedMs": {
+            "title": "Time waited",
             "type": "integer",
             "minimum": 0
           }
@@ -166,6 +179,7 @@
         "type": "object",
         "properties": {
           "pid": {
+            "title": "Process number",
             "type": "integer"
           }
         },
@@ -183,6 +197,7 @@
         "type": "object",
         "properties": {
           "response": {
+            "title": "Answer",
             "description": "What the service answered."
           }
         },

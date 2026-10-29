@@ -33,6 +33,20 @@ It gives:
 
 The music goes into the video from the original file at full quality; this plugin only listens, at 8 kHz mono, to find the number.
 
+### Many videos and many musics
+
+The flow runs once for each video. To find the music that goes with each one, list the music folder and match by file name (the stem is the name without the extension):
+
+```json
+"Musics": { "type": "data.listFiles", "inputs": { "from": ["music"], "extensions": ["flac", "mp3"] } },
+"Same": { "type": "data.where", "runAfter": { "Musics": ["Succeeded"] },
+  "inputs": { "items": "@body('Musics')", "field": "stem", "op": "equals", "value": "@triggerBody().stem" } },
+"One": { "type": "data.pick", "runAfter": { "Same": ["Succeeded"] },
+  "inputs": { "items": "@body('Same')", "which": "first", "required": true, "message": "@concat('no music named ', triggerBody().stem)" } },
+```
+
+then give `@body('One').path` to `findOffset` and `replaceAudio`. A video with no music of its name fails with that message and the others carry on. Any other field can be matched the same way (`name`, `extension`, `mime`, `directory`).
+
 ## Keeping the video's speed or the music's
 
 When `speed` is not 1 the two cannot both keep their speed. `media.replaceAudio` takes `speed` and `keep`:

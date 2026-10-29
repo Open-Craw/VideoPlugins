@@ -71,6 +71,7 @@
         "type": "object",
         "properties": {
           "media": {
+            "title": "Video or sound",
             "type": [
               "object",
               "string"
@@ -81,6 +82,7 @@
             }
           },
           "model": {
+            "title": "Model",
             "type": "string",
             "maxLength": 200,
             "description": "The speech model: tiny, base, small, medium or large-v3, with .en for English only (default tiny). Downloaded once, on first use.",
@@ -91,6 +93,7 @@
             }
           },
           "language": {
+            "title": "Language spoken",
             "type": "string",
             "description": "The language as a code such as en or pt (default: found out from the first seconds).",
             "x-ui": {
@@ -99,6 +102,7 @@
             }
           },
           "skipSilence": {
+            "title": "Skip silence",
             "type": "boolean",
             "description": "Skip the stretches with no speech. It stops the model from inventing words in silence, but it can drop speech that sits over loud music (default false).",
             "default": false,
@@ -107,6 +111,7 @@
             }
           },
           "words": {
+            "title": "Give each word its time",
             "type": "boolean",
             "description": "Give each sentence its words, with their own start and end time and confidence (default false).",
             "default": false,
@@ -115,6 +120,7 @@
             }
           },
           "beamSize": {
+            "title": "Search width",
             "type": "integer",
             "minimum": 1,
             "maximum": 10,
@@ -134,63 +140,78 @@
         "type": "object",
         "properties": {
           "language": {
+            "title": "Language",
             "type": "string"
           },
           "languageProbability": {
+            "title": "Language certainty",
             "type": "number",
             "minimum": 0,
             "maximum": 1
           },
           "durationMs": {
+            "title": "Length of the sound",
             "type": "integer",
             "minimum": 0
           },
           "model": {
+            "title": "Model",
             "type": "string"
           },
           "text": {
+            "title": "Sentence",
             "type": "string",
             "description": "Everything said, the sentences joined."
           },
           "sentences": {
+            "title": "Sentences",
             "type": "array",
             "items": {
               "type": "object",
               "properties": {
                 "startMs": {
+                  "title": "Start of the sentence",
                   "type": "integer",
                   "minimum": 0
                 },
                 "endMs": {
+                  "title": "End of the sentence",
                   "type": "integer",
                   "minimum": 0
                 },
                 "text": {
+                  "title": "Sentence",
                   "type": "string"
                 },
                 "confidence": {
+                  "title": "Confidence",
                   "type": "number",
                   "minimum": 0,
                   "maximum": 1
                 },
                 "words": {
+                  "title": "Give the words",
                   "type": "array",
                   "description": "Only when words is true: the words of the sentence, in order.",
                   "items": {
                     "type": "object",
                     "properties": {
                       "startMs": {
+                        "title": "Start of the sentence",
                         "type": "integer",
                         "minimum": 0
                       },
                       "endMs": {
+                        "title": "End of the sentence",
                         "type": "integer",
                         "minimum": 0
                       },
                       "text": {
+                        "title": "Sentence",
                         "type": "string"
                       },
                       "confidence": {
+                        "title": "Confidence",
                         "type": "number",
                         "minimum": 0,
                         "maximum": 1

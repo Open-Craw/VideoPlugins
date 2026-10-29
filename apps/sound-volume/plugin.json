@@ -27,6 +27,7 @@
         "type": "object",
         "properties": {
           "audio": {
+            "title": "Sound",
             "type": [
               "object",
               "string"
@@ -37,6 +38,7 @@
             }
           },
           "windowMs": {
+            "title": "Window length",
             "type": "integer",
             "minimum": 10,
             "maximum": 60000,
@@ -48,6 +50,7 @@
             }
           },
           "sampleRate": {
+            "title": "Rate to listen at",
             "type": "integer",
             "minimum": 4000,
             "maximum": 192000,
@@ -58,6 +61,7 @@
             }
           },
           "bands": {
+            "title": "Split into bands",
             "type": "boolean",
             "description": "Split each window into low, mid and high (default true).",
             "default": true,
@@ -66,6 +70,7 @@
             }
           },
           "lowMidHz": {
+            "title": "Low ends at",
             "type": "number",
             "minimum": 1,
             "description": "Below this is low (default 250).",
@@ -76,6 +81,7 @@
             }
           },
           "midHighHz": {
+            "title": "High starts at",
             "type": "number",
             "minimum": 1,
             "description": "From this up is high (default 4000).",
@@ -95,57 +101,72 @@
         "type": "object",
         "properties": {
           "sampleRate": {
+            "title": "Rate listened at",
             "type": "integer"
           },
           "durationMs": {
+            "title": "Length of the sound",
             "type": "integer"
           },
           "windowMs": {
+            "title": "Window length",
             "type": "integer"
           },
           "bandsHz": {
+            "title": "Band limits",
             "type": [
               "object",
               "null"
             ],
             "properties": {
               "lowBelow": {
+                "title": "Low below",
                 "type": "number"
               },
               "highFrom": {
+                "title": "High from",
                 "type": "number"
               }
             }
           },
           "windows": {
+            "title": "Windows",
             "type": "array",
             "items": {
               "type": "object",
               "properties": {
                 "startMs": {
+                  "title": "Start of the window",
                   "type": "integer"
                 },
                 "endMs": {
+                  "title": "End of the window",
                   "type": "integer"
                 },
                 "rmsDb": {
+                  "title": "Average loudness",
                   "type": "number",
                   "description": "How loud it sounds on average, in dB relative to full scale (0 is the loudest, -100 is silence)."
                 },
                 "peakDb": {
+                  "title": "Loudest instant",
                   "type": "number",
                   "description": "The loudest single instant, in dB."
                 },
                 "bands": {
+                  "title": "Split into bands",
                   "type": "object",
                   "properties": {
                     "low": {
+                      "title": "Low",
                       "type": "number"
                     },
                     "mid": {
+                      "title": "Middle",
                       "type": "number"
                     },
                     "high": {
+                      "title": "High",
                       "type": "number"
                     }
                   }
@@ -160,44 +181,55 @@
             }
           },
           "summary": {
+            "title": "Summary",
             "type": "object",
             "properties": {
               "averageRmsDb": {
+                "title": "Average loudness",
                 "type": "number"
               },
               "peakDb": {
+                "title": "Loudest instant",
                 "type": "number"
               },
               "loudest": {
+                "title": "Loudest moment",
                 "type": [
                   "object",
                   "null"
                 ],
                 "properties": {
                   "startMs": {
+                    "title": "Start of the window",
                     "type": "integer"
                   },
                   "endMs": {
+                    "title": "End of the window",
                     "type": "integer"
                   },
                   "rmsDb": {
+                    "title": "Average loudness",
                     "type": "number"
                   }
                 }
               },
               "quietest": {
+                "title": "Quietest moment",
                 "type": [
                   "object",
                   "null"
                 ],
                 "properties": {
                   "startMs": {
+                    "title": "Start of the window",
                     "type": "integer"
                   },
                   "endMs": {
+                    "title": "End of the window",
                     "type": "integer"
                   },
                   "rmsDb": {
+                    "title": "Average loudness",
                     "type": "number"
                   }
                 }
@@ -244,6 +276,7 @@
         "type": "object",
         "properties": {
           "audio": {
+            "title": "Sound",
             "type": [
               "object",
               "string"
@@ -253,6 +286,7 @@
             }
           },
           "thresholdDb": {
+            "title": "Silence below",
             "type": "number",
             "minimum": -100,
             "maximum": 0,
@@ -264,6 +298,7 @@
             }
           },
           "minMs": {
+            "title": "Shortest silence",
             "type": "integer",
             "minimum": 0,
             "description": "Shorter stretches are ignored (default 500).",
@@ -274,6 +309,7 @@
             }
           },
           "windowMs": {
+            "title": "Window length",
             "type": "integer",
             "minimum": 10,
             "maximum": 10000,
@@ -285,6 +321,7 @@
             }
           },
           "sampleRate": {
+            "title": "Rate to listen at",
             "type": "integer",
             "minimum": 4000,
             "maximum": 192000,
@@ -303,26 +340,33 @@
         "type": "object",
         "properties": {
           "durationMs": {
+            "title": "Length of the silence",
             "type": "integer"
           },
           "thresholdDb": {
+            "title": "Silence below",
             "type": "number"
           },
           "minMs": {
+            "title": "Shortest silence",
             "type": "integer"
           },
           "silences": {
+            "title": "Quiet stretches",
             "type": "array",
             "items": {
               "type": "object",
               "properties": {
                 "startMs": {
+                  "title": "Start of the silence",
                   "type": "integer"
                 },
                 "endMs": {
+                  "title": "End of the silence",
                   "type": "integer"
                 },
                 "durationMs": {
+                  "title": "Length of the silence",
                   "type": "integer"
                 }
               },
@@ -334,6 +378,7 @@
             }
           },
           "totalSilenceMs": {
+            "title": "Total silence",
             "type": "integer"
           }
         },

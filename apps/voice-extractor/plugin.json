@@ -44,6 +44,7 @@
         "type": "object",
         "properties": {
           "media": {
+            "title": "Video or sound",
             "type": [
               "object",
               "string"
@@ -54,6 +55,7 @@
             }
           },
           "keep": {
+            "title": "How much of the original to add back",
             "type": "number",
             "minimum": 0,
             "maximum": 1,
@@ -65,6 +67,7 @@
             }
           },
           "sampleRate": {
+            "title": "Sample rate",
             "type": "integer",
             "enum": [
               16000,
@@ -78,6 +81,7 @@
             }
           },
           "rest": {
+            "title": "Also give everything but the voice",
             "type": "boolean",
             "description": "Give the rest as well as the voice (default true).",
             "default": true,
@@ -86,6 +90,7 @@
             }
           },
           "files": {
+            "title": "Also give WAV files",
             "type": "boolean",
             "description": "Give each track as a WAV file in the result too, as voiceFile and restFile (default false).",
             "default": false,
@@ -103,6 +108,7 @@
         "type": "object",
         "properties": {
           "voice": {
+            "title": "Voice track",
             "type": "object",
             "description": "The track, described as VideoCraw describes decoded sound (kind audio, f32le, file, sampleRate, channels, sampleCount, startMs...). Give it to an action that wants sound; it is good for this run only.",
             "x-ui": {
@@ -110,6 +116,7 @@
             }
           },
           "rest": {
+            "title": "Everything else",
             "type": "object",
             "description": "The track, described as VideoCraw describes decoded sound (kind audio, f32le, file, sampleRate, channels, sampleCount, startMs...). Give it to an action that wants sound; it is good for this run only.",
             "x-ui": {
@@ -120,19 +127,24 @@
             }
           },
           "voiceFile": {
+            "title": "Voice as a file",
             "type": "object",
             "description": "The track as a stored WAV file.",
             "properties": {
               "blob": {
+                "title": "Stored file",
                 "type": "string"
               },
               "mime": {
+                "title": "Type of file",
                 "type": "string"
               },
               "path": {
+                "title": "Path",
                 "type": "string"
               },
               "bytes": {
+                "title": "Size in bytes",
                 "type": "integer",
                 "minimum": 0
               }
@@ -150,19 +162,24 @@
             }
           },
           "restFile": {
+            "title": "Rest as a file",
             "type": "object",
             "description": "The track as a stored WAV file.",
             "properties": {
               "blob": {
+                "title": "Stored file",
                 "type": "string"
               },
               "mime": {
+                "title": "Type of file",
                 "type": "string"
               },
               "path": {
+                "title": "Path",
                 "type": "string"
               },
               "bytes": {
+                "title": "Size in bytes",
                 "type": "integer",
                 "minimum": 0
               }
@@ -180,14 +197,17 @@
             }
           },
           "voiceDb": {
+            "title": "Loudness of the voice",
             "type": "number",
             "description": "How loud the voice track is, in dB against full scale (-120 is silence)."
           },
           "restDb": {
+            "title": "Loudness of the rest",
             "type": "number",
             "description": "How loud the rest track is, in dB against full scale."
           },
           "durationMs": {
+            "title": "Length",
             "type": "integer",
             "minimum": 0
           }

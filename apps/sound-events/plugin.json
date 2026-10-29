@@ -44,6 +44,7 @@
         "type": "object",
         "properties": {
           "media": {
+            "title": "Video or sound",
             "type": [
               "object",
               "string"
@@ -54,6 +55,7 @@
             }
           },
           "labels": {
+            "title": "Sounds to listen for",
             "type": "array",
             "description": "What to listen for. Leave it out to listen for every class (speech and music are everywhere, so a flow usually names some).",
             "items": {
@@ -588,6 +590,7 @@
             }
           },
           "minConfidence": {
+            "title": "Least confidence",
             "type": "number",
             "minimum": 0.05,
             "maximum": 1,
@@ -599,6 +602,7 @@
             }
           },
           "gapMs": {
+            "title": "Longest gap",
             "type": "integer",
             "minimum": 0,
             "maximum": 600000,
@@ -610,6 +614,7 @@
             }
           },
           "minFrames": {
+            "title": "Fewest frames",
             "type": "integer",
             "minimum": 1,
             "maximum": 100,
@@ -620,6 +625,7 @@
             }
           },
           "clips": {
+            "title": "Make a clip of each event",
             "type": "boolean",
             "description": "Give a clip of each event (default true).",
             "default": true,
@@ -628,6 +634,7 @@
             }
           },
           "clipPadMs": {
+            "title": "Sound around each event",
             "type": "integer",
             "minimum": 0,
             "maximum": 5000,
@@ -639,6 +646,7 @@
             }
           },
           "maxClipMs": {
+            "title": "Longest clip",
             "type": "integer",
             "minimum": 1000,
             "maximum": 60000,
@@ -659,12 +667,14 @@
         "type": "object",
         "properties": {
           "events": {
+            "title": "Events",
             "type": "array",
             "description": "In the order they start.",
             "items": {
               "type": "object",
               "properties": {
                 "label": {
+                  "title": "Kind of sound",
                   "type": "string",
                   "enum": [
                     "Speech",
@@ -1191,40 +1201,49 @@
                   ]
                 },
                 "startMs": {
+                  "title": "Start of the event",
                   "type": "integer",
                   "minimum": 0,
                   "description": "When the sound starts, in the time of the video (to about half a second: a frame of the tagger is a second long and a sound is heard in every frame it touches)."
                 },
                 "endMs": {
+                  "title": "End of the event",
                   "type": "integer",
                   "minimum": 0,
                   "description": "When it ends."
                 },
                 "confidence": {
+                  "title": "Confidence",
                   "type": "number",
                   "minimum": 0,
                   "maximum": 1,
                   "description": "The surest the tagger was of it in any frame of the event."
                 },
                 "frames": {
+                  "title": "Frames it was heard in",
                   "type": "integer",
                   "minimum": 1,
                   "description": "In how many frames it was heard."
                 },
                 "clip": {
+                  "title": "Clip of the sound",
                   "type": "object",
                   "description": "The sound of the event: a stored WAV. Left out when clips is false.",
                   "properties": {
                     "blob": {
+                      "title": "Stored file",
                       "type": "string"
                     },
                     "mime": {
+                      "title": "Type of file",
                       "type": "string"
                     },
                     "path": {
+                      "title": "Path",
                       "type": "string"
                     },
                     "bytes": {
+                      "title": "Size in bytes",
                       "type": "integer",
                       "minimum": 0
                     }
@@ -1247,11 +1266,13 @@
             }
           },
           "frames": {
+            "title": "Frames it was heard in",
             "type": "integer",
             "minimum": 0,
             "description": "How many frames of sound were scored."
           },
           "durationMs": {
+            "title": "Length of the event",
             "type": "integer",
             "minimum": 0
           }

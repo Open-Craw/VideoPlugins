@@ -27,6 +27,7 @@
         "type": "object",
         "properties": {
           "audio": {
+            "title": "Sound",
             "type": [
               "object",
               "string"
@@ -37,6 +38,7 @@
             }
           },
           "width": {
+            "title": "Width in pixels",
             "type": "integer",
             "minimum": 100,
             "maximum": 10000,
@@ -48,6 +50,7 @@
             }
           },
           "height": {
+            "title": "Height in pixels",
             "type": "integer",
             "minimum": 40,
             "maximum": 2000,
@@ -59,6 +62,7 @@
             }
           },
           "color": {
+            "title": "Colour of the waves",
             "type": "string",
             "maxLength": 64,
             "description": "Color of the waves (default #2b6cb0).",
@@ -69,6 +73,7 @@
             }
           },
           "background": {
+            "title": "Background colour",
             "type": "string",
             "maxLength": 64,
             "description": "Background color, or none (default #ffffff).",
@@ -79,6 +84,7 @@
             }
           },
           "normalize": {
+            "title": "Make the loudest point fill the height",
             "type": "boolean",
             "description": "Stretch the waves so the loudest point touches the edge (default false: a quiet sound looks quiet).",
             "default": false,
@@ -87,6 +93,7 @@
             }
           },
           "showTime": {
+            "title": "Show the time axis",
             "type": "boolean",
             "description": "Draw the time axis (default true).",
             "default": true,
@@ -95,6 +102,7 @@
             }
           },
           "title": {
+            "title": "Title of the picture",
             "type": "string",
             "maxLength": 200,
             "description": "Title of the picture, for people who cannot see it.",
@@ -103,6 +111,7 @@
             }
           },
           "regions": {
+            "title": "Stretches to mark",
             "type": "array",
             "maxItems": 5000,
             "description": "Stretches to mark. The sentences of a transcript work as they are: their text is the label.",
@@ -110,21 +119,26 @@
               "type": "object",
               "properties": {
                 "startMs": {
+                  "title": "Start",
                   "type": "integer",
                   "minimum": 0
                 },
                 "endMs": {
+                  "title": "End",
                   "type": "integer",
                   "minimum": 0
                 },
                 "label": {
+                  "title": "Label",
                   "type": "string"
                 },
                 "text": {
+                  "title": "Label",
                   "type": "string",
                   "description": "Used as the label when there is none."
                 },
                 "color": {
+                  "title": "Colour of the waves",
                   "type": "string",
                   "maxLength": 64
                 }
@@ -139,6 +153,7 @@
             }
           },
           "sampleRate": {
+            "title": "Rate to listen at",
             "type": "integer",
             "minimum": 4000,
             "maximum": 192000,
@@ -157,19 +172,24 @@
         "type": "object",
         "properties": {
           "svg": {
+            "title": "Picture (SVG)",
             "type": "string",
             "description": "The picture, as the text of an SVG file."
           },
           "width": {
+            "title": "Width in pixels",
             "type": "integer"
           },
           "height": {
+            "title": "Height in pixels",
             "type": "integer"
           },
           "durationMs": {
+            "title": "Length",
             "type": "integer"
           },
           "sampleRate": {
+            "title": "Rate to listen at",
             "type": "integer"
           }
         },

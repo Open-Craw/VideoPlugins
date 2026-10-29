@@ -33,6 +33,7 @@
         "type": "object",
         "properties": {
           "media": {
+            "title": "Video",
             "type": [
               "object",
               "string"
@@ -43,6 +44,7 @@
             }
           },
           "count": {
+            "title": "How many pictures",
             "type": "integer",
             "minimum": 1,
             "maximum": 50,
@@ -53,6 +55,7 @@
             }
           },
           "minGapMs": {
+            "title": "Least gap between picks",
             "type": "integer",
             "minimum": 0,
             "maximum": 3600000,
@@ -73,26 +76,31 @@
         "type": "object",
         "properties": {
           "picks": {
+            "title": "Picked pictures",
             "type": "array",
             "description": "The best pictures, best first.",
             "items": {
               "type": "object",
               "properties": {
                 "timeMs": {
+                  "title": "Moment",
                   "type": "integer",
                   "minimum": 0,
                   "description": "When to take the picture, in the time of the video."
                 },
                 "score": {
+                  "title": "Match strength",
                   "type": "number",
                   "minimum": 0,
                   "maximum": 1
                 },
                 "sharpness": {
+                  "title": "Sharpness",
                   "type": "number",
                   "minimum": 0
                 },
                 "brightness": {
+                  "title": "Brightness",
                   "type": "number",
                   "minimum": 0,
                   "maximum": 1
@@ -107,11 +115,13 @@
             }
           },
           "candidates": {
+            "title": "Pictures looked at",
             "type": "integer",
             "minimum": 0,
             "description": "How many pictures were looked at."
           },
           "durationMs": {
+            "title": "Length",
             "type": "integer",
             "minimum": 0
           }
