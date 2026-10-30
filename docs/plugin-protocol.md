@@ -190,6 +190,12 @@ A plugin that makes sound for another plugin (a cleaner, a voice extractor) does
 - It is good for **this run only**: the folder is emptied at the end, and a result that names a file in it is not kept for `--resume`. To keep a sound, hand it over as a file for the result (see the section before).
 - `mediaAt` in a window policy names **one** sound. A plugin that makes more than one (a voice and the rest) describes each under its own name in the result.
 
+## Using the graphics card
+
+When VideoCraw finds graphics cards, or the person running asks for a device, it offers the `gpu` feature in `hello`: `{"device":"auto","devices":[{"index":0,"name":"...","memoryMb":20464,"kind":"discrete","usedByAuto":true}]}`. `device` is the word a model plugin should run on: `auto` (the discrete card with the most memory, else the CPU), `cpu`, `gpu` or `gpu:N` (adapter N). A plugin that can use a card offers `gpu` (`{}`) in `ready`, reads `device` from `hello`, and runs its models there. A call that names a device of its own (a `device` input other than `auto`) keeps it. When the card cannot be used the plugin falls back to the CPU and says so in its result. There is nothing to offer, and no `gpu` in `hello`, when no card was found and nothing was asked for.
+
+The person running chooses with the environment variable `VIDEOCRAW_GPU` (`auto`, `cpu`, `gpu` or `gpu:N`; `cpu` runs every model on the processor). Plugins written with the SDK of this repository get the grant from `Cancel::granted_device()`, and `DeviceChoice::resolve` of the `onnx-device` library applies the rule above. `coco-objects` does today. A plugin with another default (`visual-phrases` runs its picture model on the CPU unless asked, because the int8 numbers differ on a card) keeps it.
+
 ## Using one in a recipe
 
 ```json
@@ -218,7 +224,7 @@ A plugin that times out, exits, or says something the protocol does not allow is
 
 ### Capabilities
 
-Both sides say what they can do beyond the basics, and only what **both** offered may be used afterwards. `capabilities` is an object: a name for each feature, with the settings that side offers. VideoCraw offers today `wants` (`{"media":["audio","video"]}`: it can decode sound and pictures for an action that asks, see Getting the media decoded) and `progress` (it reads `progress` messages as signs of life). When it has a folder for the plugin to write in it also gives `workDir` in `hello` and offers `outputs` (`{"media":["audio"]}`: a plugin may write sound there for the next plugin, see Writing sound for the next plugin). Handing a file to the result (`workFile`) is not a capability: it works whenever `workDir` was given. A feature the plugin offers and VideoCraw does not is ignored. `experimental` holds features still being tried, in the same shape, agreed one by one, so one can be tried without a new protocol number.
+Both sides say what they can do beyond the basics, and only what **both** offered may be used afterwards. `capabilities` is an object: a name for each feature, with the settings that side offers. VideoCraw offers today `wants` (`{"media":["audio","video"]}`: it can decode sound and pictures for an action that asks, see Getting the media decoded) and `progress` (it reads `progress` messages as signs of life). When it has a folder for the plugin to write in it also gives `workDir` in `hello` and offers `outputs` (`{"media":["audio"]}`: a plugin may write sound there for the next plugin, see Writing sound for the next plugin). When it found graphics cards it offers `gpu` (the device to use and the adapters, see Using the graphics card). Handing a file to the result (`workFile`) is not a capability: it works whenever `workDir` was given. A feature the plugin offers and VideoCraw does not is ignored. `experimental` holds features still being tried, in the same shape, agreed one by one, so one can be tried without a new protocol number.
 
 `requires` in `ready` lists the features the plugin cannot work without. If one was not agreed VideoCraw refuses the plugin with a message that names it, at start and not in the middle of a run. A manifest with an action that has `wants` needs `wants` even if `requires` leaves it out. New protocol features from now on are capabilities, and the protocol number changes only when an existing message changes.
 

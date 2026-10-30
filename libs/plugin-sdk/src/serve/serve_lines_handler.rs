@@ -45,6 +45,8 @@ pub fn serve_lines(
     let mut calls = Vec::new();
     // The folder the host gave this plugin to write media in, from `hello`.
     let mut work_dir: Option<std::path::PathBuf> = None;
+    // The device the host grants for models, from the `gpu` capability of `hello`.
+    let mut gpu_device: Option<String> = None;
 
     for line in input.lines().map_while(Result::ok) {
         let Ok(message) = serde_json::from_str::<Value>(&line) else {
@@ -53,6 +55,9 @@ pub fn serve_lines(
         match message["type"].as_str() {
             Some("hello") => {
                 work_dir = message["workDir"].as_str().map(std::path::PathBuf::from);
+                gpu_device = message["capabilities"]["gpu"]["device"]
+                    .as_str()
+                    .map(str::to_string);
                 if !send(&output, &ready()) {
                     return;
                 }
@@ -70,6 +75,7 @@ pub fn serve_lines(
                             );
                         },
                         work_dir.clone(),
+                        gpu_device.clone(),
                     )
                 };
                 if let Some(id) = message["id"].as_u64() {
@@ -106,12 +112,13 @@ pub fn serve_lines(
 }
 
 /// The answer to `hello`: the protocol and what the SDK can do for a plugin, which is to read the
-/// sound and the pictures the host decodes (`wants`) and to say a call is alive (`progress`).
+/// sound and the pictures the host decodes (`wants`), to say a call is alive (`progress`) and to
+/// take the graphics card the host grants (`gpu`).
 fn ready() -> Value {
     json!({
         "type": "ready",
         "protocol": PROTOCOL,
-        "capabilities": { "wants": { "media": ["audio", "video"] }, "progress": {} }
+        "capabilities": { "wants": { "media": ["audio", "video"] }, "progress": {}, "gpu": {} }
     })
 }
 

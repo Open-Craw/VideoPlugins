@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use serde_json::{json, Value};
 use videoplugins_appearances::{track_appearances, Presence, Sample};
 use videoplugins_frame_reader::{read_video_region, PixelFormat};
+use videoplugins_onnx_device::DeviceChoice;
 use videoplugins_plugin_sdk::{Cancel, Failure};
 use videoplugins_work_files::write_png_file;
 
@@ -22,7 +23,9 @@ use super::read_find_options_mapper::read_find_options;
 /// the class shows up (with its boxes drawn, a stored PNG) and the time of it in the source. A
 /// class that stays in the video is one appearance; one that leaves and comes back is two.
 pub fn find_objects(params: &Value, cancel: &Cancel) -> Result<Value, Failure> {
-    let options = read_find_options(params)?;
+    let mut options = read_find_options(params)?;
+    // A call that left the device to `auto` runs where the host grants.
+    options.device = DeviceChoice::resolve(options.device, cancel.granted_device());
     let media = params
         .get("media")
         .ok_or_else(|| Failure::status(400, "media is missing: give a video"))?;

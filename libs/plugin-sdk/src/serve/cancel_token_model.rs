@@ -13,6 +13,7 @@ pub struct Cancel {
     flag: Arc<AtomicBool>,
     progress: Option<ProgressSender>,
     work_dir: Option<std::path::PathBuf>,
+    gpu_device: Option<String>,
 }
 
 impl std::fmt::Debug for Cancel {
@@ -43,15 +44,23 @@ impl Cancel {
         self.work_dir.as_deref()
     }
 
-    /// A token whose `progress` calls `send` and that knows the work folder.
+    /// The device the host grants for models: `auto`, `cpu`, `gpu` or `gpu:N`, from the `gpu` it
+    /// offered in `hello`. `None` when the host offered nothing (no graphics card, or an old host).
+    pub fn granted_device(&self) -> Option<&str> {
+        self.gpu_device.as_deref()
+    }
+
+    /// A token whose `progress` calls `send` and that knows the work folder and the granted device.
     pub(crate) fn for_call(
         send: impl Fn(&str) + Send + Sync + 'static,
         work_dir: Option<std::path::PathBuf>,
+        gpu_device: Option<String>,
     ) -> Cancel {
         Cancel {
             flag: Arc::default(),
             progress: Some(Arc::new(send)),
             work_dir,
+            gpu_device,
         }
     }
 
@@ -81,10 +90,13 @@ mod tests {
         let cancel = Cancel::for_call(
             move |message| sink.lock().unwrap().push(message.to_string()),
             Some(std::path::PathBuf::from("work")),
+            Some("gpu:1".to_string()),
         );
         cancel.clone().progress("half way");
         assert_eq!(*heard.lock().unwrap(), ["half way"]);
         assert_eq!(cancel.work_dir(), Some(std::path::Path::new("work")));
         assert_eq!(Cancel::default().work_dir(), None);
+        assert_eq!(cancel.granted_device(), Some("gpu:1"));
+        assert_eq!(Cancel::default().granted_device(), None);
     }
 }
