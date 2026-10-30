@@ -35,27 +35,26 @@ The music goes into the video from the original file at full quality; this plugi
 
 ### Many videos and many musics
 
-The flow runs once for each video. To find the music that goes with each one, list the music folder and match by file name (the stem is the name without the extension):
+The flow starts once (`Once` trigger) and takes its files from two sources, each a `data.listFiles` step with its own folder and filter: the videos (`kinds: ["video"]`) and the musics (`kinds: ["audio"]`). `data.match` pairs them by name without extension, and a `Foreach` over the pairs works on each video with its music (`@item().left.path`, `@item().right.path`):
 
 ```json
-"Musics": { "type": "data.listFiles", "inputs": { "from": ["music"], "extensions": ["flac", "mp3"] } },
-"Same": { "type": "data.where", "runAfter": { "Musics": ["Succeeded"] },
-  "inputs": { "items": "@body('Musics')", "field": "stem", "op": "equals", "value": "@triggerBody().stem" } },
-"One": { "type": "data.pick", "runAfter": { "Same": ["Succeeded"] },
-  "inputs": { "items": "@body('Same')", "which": "first", "required": true, "message": "@concat('no music named ', triggerBody().stem)" } },
+"Videos": { "type": "data.listFiles", "inputs": { "from": ["videos"], "kinds": ["video"] } },
+"Musics": { "type": "data.listFiles", "inputs": { "from": ["music"], "kinds": ["audio"] } },
+"Pairs": { "type": "data.match", "runAfter": { "Videos": ["Succeeded"], "Musics": ["Succeeded"] },
+  "inputs": { "left": "@body('Videos')", "right": "@body('Musics')", "by": "stem", "onMissing": "fail" } },
 ```
 
-then give `@body('One').path` to `findOffset` and `replaceAudio`. A video with no music of its name fails with that message and the others carry on. Any other field can be matched the same way (`name`, `extension`, `mime`, `directory`).
+A video with no music of its name fails the step and says which (or is left out with `onMissing: "skip"`); two musics with the same name are an error, never a guess. Any other field can be matched the same way (`name`, `extension`...), and a source can have several folders, patterns and filters (`extensions`, `kinds`).
 
 ### Trying it
 
-`examples/replace-music.json` is the whole flow: put the videos in `videos/` and the good-quality musics in `music/`, each music named like its video (`song.mp4` and `song.flac`), and run it from that folder:
+`examples/replace-music.json` is the whole flow: put the videos in `videos/` and the good-quality musics in `music/`, each music named like its video (`song.mkv` and `song.flac`), and run it from that folder:
 
 ```
 videocraw run replace-music.json --out result.json --plugins <VideoPlugins>/apps
 ```
 
-The new videos are `<name>-better.mp4` next to `result.json`, and the result lists the offset, speed and score of each. In the editor, open the same file; the folders are set in the "Your videos" step (videos) and in the "List files" step (music).
+The new videos are `<name>-better.mp4` next to `result.json`, and the result lists the offset, speed and score of each. In the editor, open the same file; the folders and filters are set in the two "List files" steps.
 
 ## Keeping the video's speed or the music's
 
