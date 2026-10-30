@@ -7,7 +7,7 @@ use videoplugins_plugin_sdk::{Cancel, Failure};
 use videoplugins_work_files::write_png_file;
 
 use crate::classes::COCO_CLASSES;
-use crate::detect::{detect_objects, Detection};
+use crate::detect::{detect_objects, device_report, Detection, DetectionSettings};
 use crate::models::locate_model;
 use crate::picture::draw_boxes;
 
@@ -42,6 +42,11 @@ pub fn find_objects(params: &Value, cancel: &Cancel) -> Result<Value, Failure> {
     }
     let file = locate_model(options.model, cancel)?;
 
+    let settings = DetectionSettings {
+        device: options.device,
+        min_score: options.min_confidence,
+        wanted: options.wanted,
+    };
     let mut samples = Vec::with_capacity(video.frames.len());
     // What was found in each picture, to draw the boxes of an appearance on its first one.
     let mut found_in: HashMap<usize, Vec<Detection>> = HashMap::new();
@@ -61,8 +66,7 @@ pub fn find_objects(params: &Value, cancel: &Cancel) -> Result<Value, Failure> {
             pixels,
             video.width,
             video.height,
-            options.min_confidence,
-            &options.wanted,
+            &settings,
         )?;
         samples.push(Sample {
             frame: index,
@@ -118,6 +122,7 @@ pub fn find_objects(params: &Value, cancel: &Cancel) -> Result<Value, Failure> {
         "appearances": described,
         "samples": samples.len(),
         "model": options.model.name,
+        "device": device_report(options.model, options.device).map(|report| report.to_value()),
         "durationMs": video.end_ms.saturating_sub(video.start_ms),
     }))
 }

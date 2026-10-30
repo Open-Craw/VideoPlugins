@@ -6,6 +6,7 @@ use crate::models::ModelSpec;
 
 use super::decode_output_algorithm::decode_output;
 use super::detection_contract::Detection;
+use super::detection_settings_contract::DetectionSettings;
 use super::detector_store::run_detector;
 use super::non_max_suppression_algorithm::non_max_suppression;
 use super::prepare_input_algorithm::prepare_input;
@@ -21,13 +22,23 @@ pub fn detect_objects(
     rgb: &[u8],
     width: usize,
     height: usize,
-    min_score: f32,
-    wanted: &[bool; 80],
+    settings: &DetectionSettings,
 ) -> Result<Vec<Detection>, Failure> {
+    let DetectionSettings {
+        device,
+        min_score,
+        wanted,
+    } = settings;
     let prepared = prepare_input(rgb, width, height, model.input_size);
-    let answer = run_detector(model, file, prepared.tensor)?;
-    let found = decode_output(&answer, model.input_size, prepared.ratio, min_score, wanted)
-        .map_err(|message| Failure::status(422, message))?;
+    let answer = run_detector(model, *device, file, prepared.tensor)?;
+    let found = decode_output(
+        &answer,
+        model.input_size,
+        prepared.ratio,
+        *min_score,
+        wanted,
+    )
+    .map_err(|message| Failure::status(422, message))?;
     let (right, bottom) = (width as f32, height as f32);
     Ok(non_max_suppression(found, MAX_OVERLAP)
         .into_iter()

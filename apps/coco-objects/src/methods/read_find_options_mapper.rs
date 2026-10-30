@@ -1,4 +1,5 @@
 use serde_json::Value;
+use videoplugins_onnx_device::DeviceChoice;
 use videoplugins_plugin_sdk::{number, text, whole_number, Failure};
 
 use crate::classes::select_classes;
@@ -7,7 +8,7 @@ use crate::models::{model_named, MODELS};
 use super::find_options_contract::FindOptions;
 
 /// The params of `find` as options: `classes` (names; all when left out), `model` (`nano` by
-/// default), `minConfidence` (0.05 to 1, default 0.5), `gapMs` (0 to ten minutes, default 2000) and
+/// default), `device` (`auto`, `cpu`, `gpu` or `gpu:N`, default `auto`), `minConfidence` (0.05 to 1, default 0.5), `gapMs` (0 to ten minutes, default 2000) and
 /// `minSamples` (1 to 100, default 2). Anything outside its range is a 400 that says what was wrong.
 pub fn read_find_options(params: &Value) -> Result<FindOptions, Failure> {
     let name = text(params, "model", Some("nano"), 20)?.unwrap_or_default();
@@ -18,8 +19,18 @@ pub fn read_find_options(params: &Value) -> Result<FindOptions, Failure> {
             format!("model must be one of {}, not {name:?}", known.join(", ")),
         )
     })?;
+    let device_text = text(params, "device", Some("auto"), 12)?.unwrap_or_default();
+    let device = DeviceChoice::parse(&device_text).ok_or_else(|| {
+        Failure::status(
+            400,
+            format!(
+                "device must be auto, cpu, gpu or gpu:N (an adapter number), not {device_text:?}"
+            ),
+        )
+    })?;
     Ok(FindOptions {
         model,
+        device,
         wanted: select_classes(params)?,
         min_confidence: number(params, "minConfidence", 0.5, 0.05, 1.0)? as f32,
         gap_ms: whole_number(params, "gapMs", 2_000, 0, 600_000)?,
@@ -49,10 +60,13 @@ mod tests {
         )
         .unwrap();
         assert_eq!(options.model.input_size, 640);
+        let on_cpu = read_find_options(&json!({ "device": "cpu" })).unwrap();
+        assert_eq!(on_cpu.device, DeviceChoice::Cpu);
         assert_eq!(options.wanted.iter().filter(|wanted| **wanted).count(), 1);
 
         for bad in [
             json!({ "model": "huge" }),
+            json!({ "device": "cuda" }),
             json!({ "minConfidence": 2 }),
             json!({ "gapMs": -1 }),
             json!({ "minSamples": 0 }),
@@ -85,6 +99,8 @@ mod tests {
         let inputs = inputs();
         let options = read_find_options(&json!({})).unwrap();
         assert_eq!(inputs["model"]["default"], options.model.name);
+        assert_eq!(options.device, DeviceChoice::Auto);
+        assert_eq!(inputs["device"]["default"], "auto");
         assert_eq!(
             inputs["minConfidence"]["default"].as_f64().unwrap() as f32,
             options.min_confidence
