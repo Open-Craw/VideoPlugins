@@ -59,7 +59,7 @@ jobs:
       - name: Install smith
         shell: bash
         run: |
-          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple/ monosmith==1.120.0
+          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple/ monosmith==1.120.1
           smith --version
       - name: Build VideoCraw
         shell: bash
@@ -121,6 +121,16 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+      - name: Check out Open-Craw/VideoCraw
+        uses: actions/checkout@v7
+        with:
+          repository: Open-Craw/VideoCraw
+          path: VideoCraw
+          ref: 'main'
+          token: ${{ secrets.VIDEOCRAW_TOKEN }}
+      - name: Export VIDEOCRAW
+        shell: bash
+        run: echo "VIDEOCRAW=$GITHUB_WORKSPACE/VideoCraw" >> "$GITHUB_ENV"
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
@@ -131,8 +141,12 @@ jobs:
       - name: Install smith
         shell: bash
         run: |
-          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple/ monosmith==1.120.0
+          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple/ monosmith==1.120.1
           smith --version
+      - name: Build VideoCraw
+        shell: bash
+        working-directory: VideoCraw
+        run: cargo build --release -p videocraw-vcw
       - name: Setup
         run: smith ci setup
       - name: Build and upload the release files
