@@ -77,7 +77,11 @@
             "default": 16000,
             "x-ui": {
               "group": "advanced",
-              "unit": "Hz"
+              "unit": "Hz",
+              "enumTitles": {
+                "16000": "16 kHz: faster",
+                "48000": "48 kHz: full quality"
+              }
             }
           },
           "rest": {

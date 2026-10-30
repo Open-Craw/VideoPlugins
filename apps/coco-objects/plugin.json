@@ -161,7 +161,12 @@
             "default": "nano",
             "x-ui": {
               "group": "advanced",
-              "widget": "select"
+              "widget": "select",
+              "enumTitles": {
+                "nano": "Nano: fastest",
+                "tiny": "Tiny: balanced",
+                "s": "Small: most accurate"
+              }
             }
           },
           "minConfidence": {
