@@ -3,6 +3,7 @@ name = "gpu-probe"
 version = "0.0.0"
 edition = "2021"
 publish = false
+license = "MIT"
 
 # Not part of the plugins workspace: a throw-away tool to time a model on the CPU and on a GPU.
 [workspace]

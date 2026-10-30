@@ -55,3 +55,7 @@ The repository is a [MonoSmith](https://github.com/monosmith-app/monosmith) work
 A plugin brings its own runtime and dependencies, or documents them in its README. Nothing in one plugin's folder may depend on another plugin's folder.
 
 Every decision, idea and task is a GitHub issue in this repository.
+
+## Licence
+
+MIT, see [LICENSE](LICENSE). The plugins do not carry any model: models are downloaded on first use from their authors, under their own licences.
