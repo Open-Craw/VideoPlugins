@@ -55,3 +55,65 @@ node = "node-jest"     # ESLint with @monosmith/eslint-config, and Jest
 # cache = false
 # [projects.web.tasks.build]
 # depends_on = ["^build", "codegen"]
+
+# Each plugin releases on main as a .vcw package per platform (a Python one is a single "any" package).
+# vcw is private: the pipeline checks VideoCraw out beside this repository (secret VIDEOCRAW_TOKEN) and the build makes vcw from it.
+[[ci.sibling_repos]]
+repo = "Open-Craw/VideoCraw"
+ref = "main"
+env = "VIDEOCRAW"
+pre_build = "cargo build --release -p videocraw-vcw"
+token_secret = "VIDEOCRAW_TOKEN"
+
+[release]
+github_releases = true
+
+[projects.coco-objects.release]
+build = "sh tools/pack-plugin.sh coco-objects"
+assets = ["out/coco-objects-*.vcw"]
+platforms = ["windows-x64", "macos-arm64", "macos-x64", "linux-x64"]
+
+[projects.music-sync.release]
+build = "sh tools/pack-plugin.sh music-sync"
+assets = ["out/music-sync-*.vcw"]
+platforms = ["windows-x64", "macos-arm64", "macos-x64", "linux-x64"]
+
+[projects.sound-clean.release]
+build = "sh tools/pack-plugin.sh sound-clean"
+assets = ["out/sound-clean-*.vcw"]
+platforms = ["windows-x64", "macos-arm64", "macos-x64", "linux-x64"]
+
+[projects.sound-events.release]
+build = "sh tools/pack-plugin.sh sound-events"
+assets = ["out/sound-events-*.vcw"]
+platforms = ["windows-x64", "macos-arm64", "macos-x64", "linux-x64"]
+
+[projects.sound-graph.release]
+build = "sh tools/pack-plugin.sh sound-graph"
+assets = ["out/sound-graph-*.vcw"]
+platforms = ["windows-x64", "macos-arm64", "macos-x64", "linux-x64"]
+
+[projects.sound-volume.release]
+build = "sh tools/pack-plugin.sh sound-volume"
+assets = ["out/sound-volume-*.vcw"]
+platforms = ["windows-x64", "macos-arm64", "macos-x64", "linux-x64"]
+
+[projects.thumbnail.release]
+build = "sh tools/pack-plugin.sh thumbnail"
+assets = ["out/thumbnail-*.vcw"]
+platforms = ["windows-x64", "macos-arm64", "macos-x64", "linux-x64"]
+
+[projects.visual-phrases.release]
+build = "sh tools/pack-plugin.sh visual-phrases"
+assets = ["out/visual-phrases-*.vcw"]
+platforms = ["windows-x64", "macos-arm64", "macos-x64", "linux-x64"]
+
+[projects.voice-extractor.release]
+build = "sh tools/pack-plugin.sh voice-extractor"
+assets = ["out/voice-extractor-*.vcw"]
+platforms = ["windows-x64", "macos-arm64", "macos-x64", "linux-x64"]
+
+[projects.speech-to-text.release]
+build = "sh tools/pack-plugin.sh speech-to-text python"
+assets = ["out/speech-to-text-*.vcw"]
+platforms = ["linux-x64"]

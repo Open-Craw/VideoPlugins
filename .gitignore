@@ -16,3 +16,4 @@ Thumbs.db
 # smith
 .smith/
 *.egg-info/
+/out/
