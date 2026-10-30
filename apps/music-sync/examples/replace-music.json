@@ -11,7 +11,7 @@
     "Where": { "type": "music-sync.findOffset", "runAfter": { "Open": ["Succeeded"], "One": ["Succeeded"] },
       "inputs": { "video": "@body('Open')", "music": "@body('One').path" } },
     "Better": { "type": "media.replaceAudio", "runAfter": { "Where": ["Succeeded"] },
-      "inputs": { "video": "@body('Open')", "sound": "@body('One').path", "offsetMs": "@body('Where').offsetMs", "speed": "@body('Where').speed", "keep": "video", "saveAs": "@concat(triggerBody().stem, '-better.mp4')" } }
+      "inputs": { "video": "@body('Open')", "sound": "@body('One').path", "offsetMs": "@body('Where').offsetMs", "speed": "@body('Where').speed", "keep": "audio", "freezeLastFrame": true, "saveAs": "@concat(triggerBody().stem, '-better.mp4')" } }
   },
   "outputs": { "records": { "type": "array", "value": [{ "video": "@triggerBody().name", "music": "@body('One').name", "offsetMs": "@body('Where').offsetMs", "speed": "@body('Where').speed", "score": "@body('Where').score", "better": "@body('Better').path" }] } }
 }
