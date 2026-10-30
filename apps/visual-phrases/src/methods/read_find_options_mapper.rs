@@ -1,5 +1,6 @@
 use serde_json::Value;
-use videoplugins_plugin_sdk::{number, whole_number, Failure};
+use videoplugins_onnx_device::DeviceChoice;
+use videoplugins_plugin_sdk::{number, text, whole_number, Failure};
 
 use super::find_options_contract::FindOptions;
 
@@ -45,8 +46,18 @@ pub fn read_find_options(params: &Value) -> Result<FindOptions, Failure> {
         }
         phrases.push(text.to_string());
     }
+    let device_text = text(params, "device", Some("cpu"), 12)?.unwrap_or_default();
+    let device = DeviceChoice::parse(&device_text).ok_or_else(|| {
+        Failure::status(
+            400,
+            format!(
+                "device must be auto, cpu, gpu or gpu:N (an adapter number), not {device_text:?}"
+            ),
+        )
+    })?;
     Ok(FindOptions {
         phrases,
+        device,
         min_confidence: number(params, "minConfidence", 0.1, 0.01, 1.0)? as f32,
         gap_ms: whole_number(params, "gapMs", 2_000, 0, 600_000)?,
         min_samples: whole_number(params, "minSamples", 1, 1, 100)? as usize,
@@ -65,6 +76,7 @@ mod tests {
             read_find_options(&json!({ "phrases": ["  two cats on a couch ", "a car"] })).unwrap();
         assert_eq!(options.phrases, ["two cats on a couch", "a car"]);
         assert_eq!(options.min_confidence, 0.1);
+        assert_eq!(options.device, DeviceChoice::Cpu);
         assert_eq!((options.gap_ms, options.min_samples), (2_000, 1));
     }
 

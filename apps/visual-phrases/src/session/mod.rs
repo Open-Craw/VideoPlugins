@@ -2,4 +2,4 @@
 
 mod siglip_store;
 
-pub use siglip_store::{embed_pictures, embed_texts, DIMENSIONS};
+pub use siglip_store::{embed_pictures, embed_texts, vision_device_report, DIMENSIONS};

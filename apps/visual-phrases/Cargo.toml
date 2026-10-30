@@ -14,5 +14,6 @@ tokenizers = { version = "0.22", default-features = false, features = ["fancy-re
 videoplugins-appearances = { path = "../../libs/appearances" }
 videoplugins-frame-reader = { path = "../../libs/frame-reader" }
 videoplugins-model-cache = { path = "../../libs/model-cache" }
+videoplugins-onnx-device = { path = "../../libs/onnx-device" }
 videoplugins-plugin-sdk = { path = "../../libs/plugin-sdk" }
 videoplugins-work-files = { path = "../../libs/work-files" }

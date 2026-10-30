@@ -71,6 +71,25 @@
               "widget": "phrases"
             }
           },
+          "device": {
+            "title": "Run on",
+            "type": "string",
+            "enum": [
+              "auto",
+              "cpu",
+              "gpu"
+            ],
+            "default": "cpu",
+            "description": "Where the picture model runs: cpu (the default) or gpu / auto, which use the graphics card (on Windows, any DirectX 12 card). The graphics card was about 3 times faster here, but this model is quantised (int8) and its numbers differ a little from the processor's, so its scores differ too: try it on your material before relying on it. The phrase model always runs on the processor. A card that cannot be used falls back to the processor; the result says what ran.",
+            "x-ui": {
+              "group": "advanced",
+              "enumTitles": {
+                "auto": "Automatic (graphics card if there is a discrete one)",
+                "cpu": "Processor",
+                "gpu": "Graphics card"
+              }
+            }
+          },
           "minConfidence": {
             "title": "Least confidence",
             "type": "number",
@@ -204,6 +223,43 @@
             "title": "Time shown",
             "type": "integer",
             "minimum": 0
+          },
+          "device": {
+            "title": "What it ran on",
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "What the picture model really ran on: device (cpu or directml:N), name (the graphics card, if one was used) and fallback (why the graphics card was not used, if it was asked for).",
+            "properties": {
+              "device": {
+                "title": "Device",
+                "type": "string",
+                "x-ui": {
+                  "kind": "text"
+                }
+              },
+              "name": {
+                "title": "Graphics card",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "x-ui": {
+                  "kind": "text"
+                }
+              },
+              "fallback": {
+                "title": "Why not the graphics card",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "x-ui": {
+                  "kind": "text"
+                }
+              }
+            }
           }
         },
         "required": [

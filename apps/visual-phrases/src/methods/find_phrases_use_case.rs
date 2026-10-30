@@ -8,7 +8,7 @@ use crate::matching::match_probability;
 use crate::models::locate_models;
 use crate::phrases::embed_phrases;
 use crate::pictures::{embed_all_pictures, Picture};
-use crate::session::DIMENSIONS;
+use crate::session::{vision_device_report, DIMENSIONS};
 
 use super::read_find_options_mapper::read_find_options;
 
@@ -65,13 +65,14 @@ pub fn find_phrases(params: &Value, cancel: &Cancel) -> Result<Value, Failure> {
             height: picture.height,
         })
         .collect();
-    let picture_numbers = embed_all_pictures(&paths.vision, &only_pictures, |done| {
-        if cancel.is_cancelled() {
-            return Err(Failure::named("CANCELLED", "cancelled"));
-        }
-        cancel.progress(&format!("{done} of {} pictures", only_pictures.len()));
-        Ok(())
-    })?;
+    let picture_numbers =
+        embed_all_pictures(&paths.vision, options.device, &only_pictures, |done| {
+            if cancel.is_cancelled() {
+                return Err(Failure::named("CANCELLED", "cancelled"));
+            }
+            cancel.progress(&format!("{done} of {} pictures", only_pictures.len()));
+            Ok(())
+        })?;
 
     let samples: Vec<Sample> = pictures
         .iter()
@@ -121,12 +122,15 @@ pub fn find_phrases(params: &Value, cancel: &Cancel) -> Result<Value, Failure> {
     Ok(json!({
         "appearances": described,
         "samples": samples.len(),
+        "device": vision_device_report().map(|report| report.to_value()),
         "durationMs": video.end_ms.saturating_sub(video.start_ms),
     }))
 }
 
 #[cfg(test)]
 mod tests {
+    use videoplugins_onnx_device::DeviceChoice;
+
     use super::*;
 
     #[test]
@@ -176,7 +180,8 @@ mod tests {
             width: 64,
             height: 48,
         });
-        let numbers = embed_all_pictures(&paths.vision, &pictures, |_| Ok(())).unwrap();
+        let numbers =
+            embed_all_pictures(&paths.vision, DeviceChoice::Cpu, &pictures, |_| Ok(())).unwrap();
 
         let score = |picture: usize, phrase: usize| {
             match_probability(

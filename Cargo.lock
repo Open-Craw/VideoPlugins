@@ -1739,6 +1739,7 @@ dependencies = [
  "videoplugins-appearances",
  "videoplugins-frame-reader",
  "videoplugins-model-cache",
+ "videoplugins-onnx-device",
  "videoplugins-plugin-sdk",
  "videoplugins-work-files",
 ]
