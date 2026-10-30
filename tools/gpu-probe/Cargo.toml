@@ -1,0 +1,11 @@
+[package]
+name = "gpu-probe"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# Not part of the plugins workspace: a throw-away tool to time a model on the CPU and on a GPU.
+[workspace]
+
+[dependencies]
+ort = { version = "=2.0.0-rc.15", features = ["directml"] }
