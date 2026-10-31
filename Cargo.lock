@@ -1621,6 +1621,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "videoplugins-crisis-moments"
+version = "0.0.0"
+dependencies = [
+ "serde_json",
+ "videoplugins-plugin-sdk",
+]
+
+[[package]]
 name = "videoplugins-example-hits"
 version = "0.0.0"
 dependencies = [

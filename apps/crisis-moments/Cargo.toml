@@ -1,0 +1,13 @@
+[package]
+name = "videoplugins-crisis-moments"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "MIT"
+
+[package.metadata.smith]
+kind = "app"
+
+[dependencies]
+serde_json = "1"
+videoplugins-plugin-sdk = { path = "../../libs/plugin-sdk" }
