@@ -59,7 +59,7 @@ jobs:
       - name: Install smith
         shell: bash
         run: |
-          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple/ monosmith==1.120.1
+          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple/ monosmith==1.131.0
           smith --version
       - name: Build VideoCraw
         shell: bash
@@ -141,7 +141,7 @@ jobs:
       - name: Install smith
         shell: bash
         run: |
-          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple/ monosmith==1.120.1
+          python -m pip install --disable-pip-version-check --index-url https://pypi.org/simple/ monosmith==1.131.0
           smith --version
       - name: Build VideoCraw
         shell: bash
