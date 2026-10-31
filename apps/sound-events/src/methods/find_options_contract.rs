@@ -1,6 +1,10 @@
+use videoplugins_onnx_device::DeviceChoice;
+
 /// What a call to `find` asked for, checked and with the defaults filled in.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FindOptions {
+    /// Where the tagger runs.
+    pub device: DeviceChoice,
     /// One flag for each of the 521 classes: whether to look for it.
     pub wanted: [bool; 521],
     /// How sure the tagger must be of a sound, from 0 to 1.

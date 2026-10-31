@@ -2,4 +2,4 @@
 
 mod network_store;
 
-pub use network_store::run_network;
+pub use network_store::{device_report, run_network};

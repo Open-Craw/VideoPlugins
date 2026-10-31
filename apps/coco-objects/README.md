@@ -44,6 +44,10 @@ It gives `{ appearances, samples, model, durationMs }`. An **appearance** is
 
 The picture is shrunk to fit a square (416 or 640 pixels) with grey round it, given to a [YOLOX](https://github.com/Megvii-BaseDetection/YOLOX) detector run by [ONNX Runtime](https://onnxruntime.ai) (linked into the program), and the answer is turned into boxes, with overlapping boxes of the same class removed. Then the appearances are joined picture by picture, for each class.
 
+## Graphics card
+
+The detector runs where the host grants (`device: "auto"`, the default): on the discrete graphics card when the computer has one (on Windows, any DirectX 12 card), else on the processor. `cpu` always uses the processor. `gpu` uses the best card even if it is the integrated one, which can be slower than the processor. A card that cannot be used falls back to the processor. The `device` field of the result says what ran, and why a card was not used. The host can set the grant for a whole run with `VIDEOCRAW_GPU`.
+
 ## Licences
 
 The program's own licence is the author's to choose (`vcw check` says there is none yet). What it uses: the YOLOX code and weights are Apache-2.0; ONNX Runtime is MIT; the Rust crates are listed in [docs/licences.md](../../docs/licences.md). The weights are **not packaged**: they are downloaded from their authors.

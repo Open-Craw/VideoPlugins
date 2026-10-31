@@ -4,18 +4,32 @@ use std::sync::{Mutex, MutexGuard, OnceLock};
 use ort::environment::Environment;
 use ort::session::Session;
 use ort::value::Tensor;
+use videoplugins_onnx_device::{open_session, DeviceChoice, DeviceReport};
 use videoplugins_plugin_sdk::Failure;
 
 /// How many classes the model scores in each frame.
 pub const CLASSES: usize = 521;
 
-/// The loaded model, kept until the plugin stops: loading takes far longer than listening.
-fn session() -> MutexGuard<'static, Option<Session>> {
-    static SESSION: OnceLock<Mutex<Option<Session>>> = OnceLock::new();
+/// The loaded model, the device it was asked to run on and what it really runs on.
+struct Loaded {
+    asked: DeviceChoice,
+    session: Session,
+    report: DeviceReport,
+}
+
+/// The loaded model, kept until the plugin stops: loading takes far longer than listening. It is
+/// loaded again when a call asks for another device.
+fn session() -> MutexGuard<'static, Option<Loaded>> {
+    static SESSION: OnceLock<Mutex<Option<Loaded>>> = OnceLock::new();
     SESSION
         .get_or_init(|| Mutex::new(None))
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+/// What the model really runs on, once it is loaded.
+pub fn device_report() -> Option<DeviceReport> {
+    session().as_ref().map(|loaded| loaded.report.clone())
 }
 
 fn environment() -> Result<&'static Environment, Failure> {
@@ -32,29 +46,36 @@ fn environment() -> Result<&'static Environment, Failure> {
 }
 
 /// Gives the model `samples` (mono, 16 kHz, from -1 to 1) and returns the scores of every frame it
-/// found, one frame after another, `CLASSES` values each. `file` is the model, loaded on the first call.
-pub fn run_yamnet(file: &Path, samples: &[f32]) -> Result<Vec<f32>, Failure> {
+/// found, one frame after another, `CLASSES` values each. `file` is the model, loaded on the first
+/// call (or when `device` is not the one it was loaded for).
+pub fn run_yamnet(file: &Path, device: DeviceChoice, samples: &[f32]) -> Result<Vec<f32>, Failure> {
     let broken = |what: &str, error: &dyn std::fmt::Display| {
         Failure::status(500, format!("the sound model: {what}: {error}"))
     };
     let mut loaded = session();
-    if loaded.is_none() {
-        let opened = Session::builder(environment()?)
-            .and_then(|mut builder| builder.commit_from_file(file))
-            .map_err(|error| {
-                Failure::status(
-                    422,
-                    format!(
-                        "the sound model cannot be loaded from {}: {error}",
-                        file.display()
-                    ),
-                )
-            })?;
-        *loaded = Some(opened);
+    if loaded
+        .as_ref()
+        .is_none_or(|current| current.asked != device)
+    {
+        let (session, report) = open_session(environment()?, device, file).map_err(|error| {
+            Failure::status(
+                422,
+                format!(
+                    "the sound model cannot be loaded from {}: {error}",
+                    file.display()
+                ),
+            )
+        })?;
+        *loaded = Some(Loaded {
+            asked: device,
+            session,
+            report,
+        });
     }
-    let session = loaded
+    let session = &mut loaded
         .as_mut()
-        .ok_or_else(|| Failure::status(500, "the sound model is not loaded"))?;
+        .ok_or_else(|| Failure::status(500, "the sound model is not loaded"))?
+        .session;
     let input_name = session
         .inputs()
         .first()

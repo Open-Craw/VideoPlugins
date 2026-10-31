@@ -656,6 +656,25 @@
               "group": "advanced",
               "unit": "ms"
             }
+          },
+          "device": {
+            "title": "Run on",
+            "type": "string",
+            "enum": [
+              "auto",
+              "cpu",
+              "gpu"
+            ],
+            "default": "cpu",
+            "description": "Where the tagger runs: cpu (the default) or gpu / auto, which use the graphics card (on Windows, any DirectX 12 card). The card was no faster here (this model is small and the sound is scored in chunks), so the processor is the default; the scores are the same on both. A card that cannot be used falls back to the processor; the result says what ran.",
+            "x-ui": {
+              "group": "advanced",
+              "enumTitles": {
+                "auto": "Automatic",
+                "cpu": "Processor",
+                "gpu": "Graphics card"
+              }
+            }
           }
         },
         "required": [
@@ -1275,6 +1294,43 @@
             "title": "Length of the event",
             "type": "integer",
             "minimum": 0
+          },
+          "device": {
+            "title": "What it ran on",
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "What the tagger really ran on: device (cpu or directml:N), name (the graphics card, if one was used) and fallback (why the graphics card was not used, if it was asked for or could have been). Null when there was no sound to score.",
+            "properties": {
+              "device": {
+                "title": "Device",
+                "type": "string",
+                "x-ui": {
+                  "kind": "text"
+                }
+              },
+              "name": {
+                "title": "Graphics card",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "x-ui": {
+                  "kind": "text"
+                }
+              },
+              "fallback": {
+                "title": "Why not the graphics card",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "x-ui": {
+                  "kind": "text"
+                }
+              }
+            }
           }
         },
         "required": [

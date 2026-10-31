@@ -47,6 +47,10 @@ It gives `{ voice, rest, voiceDb, restDb, durationMs }`, and `voiceFile` and `re
 
 The sound is cut in frames of 960 samples every 480 (20 ms and 10 ms at 48 kHz) and turned into frequencies. The network is given, for each frame, how loud 32 bands are (against their own running mean) and the lowest 96 frequencies (against their running size), and answers with a gain for each band and the coefficients of a small filter: the voice is the noisy sound with each band turned by its gain, with the lowest frequencies rebuilt by the filter from five frames of the noisy sound (two before, the frame, two after). Then the frames are turned back into a sound. The network is DeepFilterNet3 as the ONNX file of `soniqo/DeepFilterNet3-ONNX`, run by [ONNX Runtime](https://onnxruntime.ai) (linked into the program); the processing round it follows that repository's contract and gives the same sound as a numpy version of it to within 108 dB.
 
+## Graphics card
+
+`device` (`cpu` by default, `auto`, `gpu` or `gpu:N`) says where the network runs; `auto` takes the card the host grants. Measured on an RX 7900 XT, the card was about 20 times slower (46 s against 2.4 s for 219 s of sound), because the network works one frame after another, and the voice is the same on both, so the default is `cpu`. The result's `device` says what ran.
+
 ## Licences
 
 The program's own licence is the author's to choose (`vcw check` says there is none yet). What it uses: DeepFilterNet is Apache-2.0 or MIT (the ONNX conversion is published under MIT); ONNX Runtime is MIT; the Rust crates (`realfft` and `rustfft` for the transform) are listed in [docs/licences.md](../../docs/licences.md). The model is **not packaged**: it is downloaded.

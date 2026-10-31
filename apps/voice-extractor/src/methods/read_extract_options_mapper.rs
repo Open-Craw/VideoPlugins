@@ -1,12 +1,22 @@
 use serde_json::Value;
-use videoplugins_plugin_sdk::{flag, number, whole_number, Failure};
+use videoplugins_onnx_device::DeviceChoice;
+use videoplugins_plugin_sdk::{flag, number, text, whole_number, Failure};
 
 use super::extract_options_contract::ExtractOptions;
 
 /// The params of `extract` as options: `keep` (0 to 1, default 0), `sampleRate` (16000 by default,
-/// or 48000), `rest` (default true) and `files` (default false). Anything else is a 400 that says
-/// what was wrong.
+/// or 48000), `rest` (default true), `files` (default false) and `device` (`auto`, `cpu`, `gpu` or
+/// `gpu:N`, default `cpu`). Anything else is a 400 that says what was wrong.
 pub fn read_extract_options(params: &Value) -> Result<ExtractOptions, Failure> {
+    let device_text = text(params, "device", Some("cpu"), 12)?.unwrap_or_default();
+    let device = DeviceChoice::parse(&device_text).ok_or_else(|| {
+        Failure::status(
+            400,
+            format!(
+                "device must be auto, cpu, gpu or gpu:N (an adapter number), not {device_text:?}"
+            ),
+        )
+    })?;
     let sample_rate = whole_number(params, "sampleRate", 16_000, 16_000, 48_000)? as u32;
     if sample_rate != 16_000 && sample_rate != 48_000 {
         return Err(Failure::status(
@@ -15,6 +25,7 @@ pub fn read_extract_options(params: &Value) -> Result<ExtractOptions, Failure> {
         ));
     }
     Ok(ExtractOptions {
+        device,
         keep: number(params, "keep", 0.0, 0.0, 1.0)? as f32,
         sample_rate,
         rest: flag(params, "rest", true)?,
@@ -50,6 +61,7 @@ mod tests {
             json!({ "sampleRate": 8000 }),
             json!({ "rest": "no" }),
             json!({ "files": 1 }),
+            json!({ "device": "cuda" }),
         ] {
             let failure = read_extract_options(&bad).unwrap_err();
             assert_eq!(failure.code, Some(json!(400)), "{bad}");
@@ -77,6 +89,8 @@ mod tests {
     fn the_defaults_the_manifest_states_are_the_ones_the_code_uses() {
         let inputs = inputs();
         let options = read_extract_options(&json!({})).unwrap();
+        assert_eq!(options.device, DeviceChoice::Cpu);
+        assert_eq!(inputs["device"]["default"], "cpu");
         assert_eq!(
             inputs["keep"]["default"].as_f64().unwrap() as f32,
             options.keep

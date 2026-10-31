@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use videoplugins_onnx_device::DeviceChoice;
 use videoplugins_plugin_sdk::{Cancel, Failure};
 
 use crate::tables::Tables;
@@ -28,6 +29,7 @@ pub fn enhance_voice(
     signal: &[f32],
     tables: &Tables,
     network: &Path,
+    device: DeviceChoice,
     cancel: &Cancel,
 ) -> Result<Vec<f32>, Failure> {
     if signal.is_empty() {
@@ -53,7 +55,7 @@ pub fn enhance_voice(
         }
         let from = start.saturating_sub(MARGIN);
         let to = (end + MARGIN).min(signal.len());
-        let piece = enhance_piece(&signal[from..to], tables, network)?;
+        let piece = enhance_piece(&signal[from..to], tables, network, device)?;
 
         let lead = if start == 0 { 0 } else { half };
         let trail = if end == signal.len() { 0 } else { half };
@@ -110,13 +112,14 @@ mod tests {
             })
             .collect();
 
-        let voice = enhance_voice(&signal, &tables, &network, &Cancel::default()).unwrap();
+        let device = DeviceChoice::Cpu;
+        let voice = enhance_voice(&signal, &tables, &network, device, &Cancel::default()).unwrap();
 
         assert_eq!(voice.len(), signal.len());
         // The biggest step from one sample to the next, in a stretch of 20 ms round a joint: what
         // the pieces make there is no more of a jump than one run over the whole sound makes (the
         // sound itself has steps: a pulse starts exactly at 60 s).
-        let whole = enhance_piece(&signal, &tables, &network).unwrap();
+        let whole = enhance_piece(&signal, &tables, &network, device).unwrap();
         let step = |sound: &[f32], from: usize| {
             sound[from..from + 960]
                 .windows(2)

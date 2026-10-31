@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use videoplugins_onnx_device::DeviceChoice;
 use videoplugins_plugin_sdk::Failure;
 
 use crate::network::run_network;
@@ -9,13 +10,18 @@ use crate::tables::Tables;
 /// The voice of a piece of sound (48 kHz, one channel) as the network makes it: the sound is
 /// turned into frames of frequencies, the network is shown their features and answers with a mask
 /// and a filter, which are applied, and the frames are turned back into a sound of the same length.
-pub fn enhance_piece(signal: &[f32], tables: &Tables, network: &Path) -> Result<Vec<f32>, Failure> {
+pub fn enhance_piece(
+    signal: &[f32],
+    tables: &Tables,
+    network: &Path,
+    device: DeviceChoice,
+) -> Result<Vec<f32>, Failure> {
     if signal.is_empty() {
         return Ok(Vec::new());
     }
     let spectrogram = analyse_sound(signal, tables);
     let features = network_features(&spectrogram, tables);
-    let answer = run_network(network, &features, spectrogram.frames)?;
+    let answer = run_network(network, device, &features, spectrogram.frames)?;
     let enhanced = apply_deep_filter(&spectrogram, &answer, tables);
     Ok(synthesise_sound(&enhanced, signal.len(), tables))
 }
@@ -57,7 +63,7 @@ mod tests {
                     .sum::<f32>()
             })
             .collect();
-        let voice = enhance_piece(&noise, &tables, &network).unwrap();
+        let voice = enhance_piece(&noise, &tables, &network, DeviceChoice::Cpu).unwrap();
         assert_eq!(voice.len(), noise.len());
         assert!(
             rms(&voice) < rms(&noise) * 0.3,
@@ -91,7 +97,7 @@ mod tests {
                 .collect()
         };
         let (signal, wanted) = (floats(&input), floats(&reference));
-        let voice = enhance_piece(&signal, &tables, &network).unwrap();
+        let voice = enhance_piece(&signal, &tables, &network, DeviceChoice::Cpu).unwrap();
         assert_eq!(voice.len(), wanted.len());
         let error: f32 = voice
             .iter()

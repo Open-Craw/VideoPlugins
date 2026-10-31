@@ -1,5 +1,6 @@
 use serde_json::Value;
-use videoplugins_plugin_sdk::{flag, number, whole_number, Failure};
+use videoplugins_onnx_device::DeviceChoice;
+use videoplugins_plugin_sdk::{flag, number, text, whole_number, Failure};
 
 use crate::classes::select_labels;
 
@@ -7,10 +8,21 @@ use super::find_options_contract::FindOptions;
 
 /// The params of `find` as options: `labels` (names; all when left out), `minConfidence` (0.05 to
 /// 1, default 0.5), `gapMs` (0 to ten minutes, default 1000), `minFrames` (1 to 100, default 1),
-/// `clips` (default true), `clipPadMs` (0 to 5000, default 250) and `maxClipMs` (1000 to a minute,
-/// default 10000). Anything outside its range is a 400 that says what was wrong.
+/// `clips` (default true), `clipPadMs` (0 to 5000, default 250), `maxClipMs` (1000 to a minute,
+/// default 10000) and `device` (`auto`, `cpu`, `gpu` or `gpu:N`, default `cpu`). Anything outside
+/// its range is a 400 that says what was wrong.
 pub fn read_find_options(params: &Value) -> Result<FindOptions, Failure> {
+    let device_text = text(params, "device", Some("cpu"), 12)?.unwrap_or_default();
+    let device = DeviceChoice::parse(&device_text).ok_or_else(|| {
+        Failure::status(
+            400,
+            format!(
+                "device must be auto, cpu, gpu or gpu:N (an adapter number), not {device_text:?}"
+            ),
+        )
+    })?;
     Ok(FindOptions {
+        device,
         wanted: select_labels(params)?,
         min_confidence: number(params, "minConfidence", 0.5, 0.05, 1.0)? as f32,
         gap_ms: whole_number(params, "gapMs", 1_000, 0, 600_000)?,
@@ -53,6 +65,7 @@ mod tests {
             json!({ "clips": "yes" }),
             json!({ "maxClipMs": 10 }),
             json!({ "labels": ["Unicorn"] }),
+            json!({ "device": "cuda" }),
         ] {
             let failure = read_find_options(&bad).unwrap_err();
             assert_eq!(failure.code, Some(json!(400)), "{bad}");
@@ -80,6 +93,8 @@ mod tests {
     fn the_defaults_the_manifest_states_are_the_ones_the_code_uses() {
         let inputs = inputs();
         let options = read_find_options(&json!({})).unwrap();
+        assert_eq!(options.device, DeviceChoice::Cpu);
+        assert_eq!(inputs["device"]["default"], "cpu");
         assert_eq!(
             inputs["minConfidence"]["default"].as_f64().unwrap() as f32,
             options.min_confidence

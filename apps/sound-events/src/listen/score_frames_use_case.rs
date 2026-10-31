@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use videoplugins_onnx_device::DeviceChoice;
 use videoplugins_plugin_sdk::{Cancel, Failure};
 
 use super::yamnet_store::{run_yamnet, CLASSES};
@@ -14,14 +15,20 @@ const CHUNK_FRAMES: usize = 600;
 
 /// The scores of every frame of `samples` (mono, 16 kHz), one frame after another with `CLASSES`
 /// values each. Frame `n` starts at sample `n * HOP`.
-pub fn score_frames(file: &Path, samples: &[f32], cancel: &Cancel) -> Result<Vec<f32>, Failure> {
-    score_in_chunks(file, samples, CHUNK_FRAMES, cancel)
+pub fn score_frames(
+    file: &Path,
+    device: DeviceChoice,
+    samples: &[f32],
+    cancel: &Cancel,
+) -> Result<Vec<f32>, Failure> {
+    score_in_chunks(file, device, samples, CHUNK_FRAMES, cancel)
 }
 
 /// The same, a chunk of `chunk_frames` frames at a time. Chunks start on a multiple of `HOP` and
 /// reach far enough to finish their last frame, so a frame has the same score whatever the chunking.
 pub(super) fn score_in_chunks(
     file: &Path,
+    device: DeviceChoice,
     samples: &[f32],
     chunk_frames: usize,
     cancel: &Cancel,
@@ -40,7 +47,7 @@ pub(super) fn score_in_chunks(
         ));
         let last = start + step >= samples.len();
         let end = (start + step + WINDOW - HOP).min(samples.len());
-        let frames = run_yamnet(file, &samples[start..end])?;
+        let frames = run_yamnet(file, device, &samples[start..end])?;
         let keep = if last {
             frames.len()
         } else {
@@ -83,8 +90,9 @@ mod tests {
             .collect();
         let cancel = Cancel::default();
 
-        let whole = score_in_chunks(&file, &samples, 10_000, &cancel).unwrap();
-        let chunked = score_in_chunks(&file, &samples, 5, &cancel).unwrap();
+        let device = DeviceChoice::Cpu;
+        let whole = score_in_chunks(&file, device, &samples, 10_000, &cancel).unwrap();
+        let chunked = score_in_chunks(&file, device, &samples, 5, &cancel).unwrap();
 
         // The chunked run may score one more frame at the end: the last stretch of sound, which no
         // whole frame reaches, with silence to fill it. Every frame both score must agree.
@@ -99,7 +107,14 @@ mod tests {
 
     #[test]
     fn no_sound_gives_no_frames() {
-        let scores = score_in_chunks(Path::new("no-model"), &[], 5, &Cancel::default()).unwrap();
+        let scores = score_in_chunks(
+            Path::new("no-model"),
+            DeviceChoice::Cpu,
+            &[],
+            5,
+            &Cancel::default(),
+        )
+        .unwrap();
         assert!(scores.is_empty());
     }
 }

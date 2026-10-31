@@ -46,6 +46,10 @@ It gives `{ events, frames, durationMs }`. An **event** is
 
 The model is [YAMNet](https://github.com/tensorflow/models/tree/master/research/audioset/yamnet), Google's tagger (MobileNet v1 on a log-mel spectrogram, 3.7 million parameters), as an ONNX file converted by someone else from the original and run by [ONNX Runtime](https://onnxruntime.ai) (linked into the program). It takes the raw waveform; the spectrogram is computed inside the model. For each frame it scores the 521 classes from 0 to 1, independently, so several can be heard at once. Then the frames are joined into events for each class.
 
+## Graphics card
+
+`device` (`cpu` by default, `auto`, `gpu` or `gpu:N`) says where the tagger runs; `auto` takes the card the host grants. Measured on an RX 7900 XT, the card was no faster than the processor (about 0.9 s for 219 s of sound on both), and the events are the same, so the default is `cpu`. The result's `device` says what ran.
+
 ## Licences
 
 The program's own licence is the author's to choose (`vcw check` says there is none yet). What it uses: YAMNet is Apache-2.0 (the ONNX conversion says the same); ONNX Runtime is MIT; the Rust crates are listed in [docs/licences.md](../../docs/licences.md). The model is **not packaged**: it is downloaded.

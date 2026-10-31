@@ -4,4 +4,4 @@ mod score_frames_use_case;
 mod yamnet_store;
 
 pub use score_frames_use_case::{score_frames, HOP, WINDOW};
-pub use yamnet_store::CLASSES;
+pub use yamnet_store::{device_report, CLASSES};

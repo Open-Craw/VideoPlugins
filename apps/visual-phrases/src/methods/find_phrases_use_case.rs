@@ -1,6 +1,7 @@
 use serde_json::{json, Value};
 use videoplugins_appearances::{track_appearances, Presence, Sample};
 use videoplugins_frame_reader::{read_video_region, PixelFormat};
+use videoplugins_onnx_device::DeviceChoice;
 use videoplugins_plugin_sdk::{Cancel, Failure};
 use videoplugins_work_files::write_png_file;
 
@@ -21,7 +22,9 @@ use super::read_find_options_mapper::read_find_options;
 /// holds (a stored PNG) and its time in the source. A phrase that stays true is one appearance;
 /// one that stops for longer than `gapMs` and comes back is two.
 pub fn find_phrases(params: &Value, cancel: &Cancel) -> Result<Value, Failure> {
-    let options = read_find_options(params)?;
+    let mut options = read_find_options(params)?;
+    // A call that asked for `auto` runs where the host grants; the default stays the processor.
+    options.device = DeviceChoice::resolve(options.device, cancel.granted_device());
     let media = params
         .get("media")
         .ok_or_else(|| Failure::status(400, "media is missing: give a video"))?;

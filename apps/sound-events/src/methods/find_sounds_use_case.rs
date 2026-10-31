@@ -1,11 +1,12 @@
 use serde_json::{json, Value};
+use videoplugins_onnx_device::DeviceChoice;
 use videoplugins_plugin_sdk::{Cancel, Failure};
 use videoplugins_sound_reader::read_audio_region;
 use videoplugins_work_files::write_wav_file;
 
 use crate::classes::AUDIOSET_CLASSES;
 use crate::events::{event_times, merge_frames};
-use crate::listen::{score_frames, CLASSES, HOP, WINDOW};
+use crate::listen::{device_report, score_frames, CLASSES, HOP, WINDOW};
 use crate::models::locate_model;
 
 use super::read_find_options_mapper::read_find_options;
@@ -26,7 +27,9 @@ const WINDOW_MS: u64 = (WINDOW as u64) * 1000 / (RATE as u64);
 /// of the source, how sure the tagger is, and (unless `clips` is false) a stored WAV of it. A sound
 /// that goes on is one event; one that stops for longer than `gapMs` and comes back is two.
 pub fn find_sounds(params: &Value, cancel: &Cancel) -> Result<Value, Failure> {
-    let options = read_find_options(params)?;
+    let mut options = read_find_options(params)?;
+    // A call that asked for `auto` runs where the host grants; the default stays the processor.
+    options.device = DeviceChoice::resolve(options.device, cancel.granted_device());
     let media = params
         .get("media")
         .ok_or_else(|| Failure::status(400, "media is missing: give a video"))?;
@@ -48,7 +51,7 @@ pub fn find_sounds(params: &Value, cancel: &Cancel) -> Result<Value, Failure> {
         ));
     }
     let file = locate_model(cancel)?;
-    let scores = score_frames(&file, &sound.samples, cancel)?;
+    let scores = score_frames(&file, options.device, &sound.samples, cancel)?;
     let events = merge_frames(
         &scores,
         CLASSES,
@@ -96,6 +99,7 @@ pub fn find_sounds(params: &Value, cancel: &Cancel) -> Result<Value, Failure> {
     Ok(json!({
         "events": described,
         "frames": scores.len() / CLASSES,
+        "device": device_report().map(|report| report.to_value()),
         "durationMs": duration_ms,
     }))
 }

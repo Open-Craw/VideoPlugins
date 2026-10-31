@@ -43,6 +43,10 @@ It gives `{ appearances, samples, durationMs }`. An **appearance** is
 
 The model is [SigLIP](https://huggingface.co/google/siglip-base-patch16-224) (base, patch 16, 224 pixels), Google's image-text model, as the ONNX files of the `Xenova/siglip-base-patch16-224` conversion, run by [ONNX Runtime](https://onnxruntime.ai) (linked into the program). A picture is squeezed to 224 x 224 (a bicubic resize like the one the model was trained with) and becomes 768 numbers; a phrase is cut into pieces by the model's tokenizer and becomes 768 numbers. How alike the two are, scaled by the model's own constants (`logit_scale` and `logit_bias`) and passed through a sigmoid, is the score. Then the pictures are joined into appearances for each phrase, as for the detector.
 
+## Graphics card
+
+The picture model runs on the processor by default (`device: "cpu"`). `gpu` or `auto` use the graphics card (on Windows, any DirectX 12 card), which was about 3 times faster here. The model is quantised (int8), so its numbers differ a little on a card, and so do its scores: try it on your material before you rely on it. The phrase model always runs on the processor. A card that cannot be used falls back to the processor, and the `device` field of the result says what ran. With `auto`, the plugin follows the grant of the host (`VIDEOCRAW_GPU`).
+
 ## Licences
 
 The program's own licence is the author's to choose (`vcw check` says there is none yet). What it uses: SigLIP is Apache-2.0 (Google; the conversion says the same); ONNX Runtime is MIT; the Hugging Face `tokenizers` crate is Apache-2.0; the Rust crates are listed in [docs/licences.md](../../docs/licences.md). The model is **not packaged**: it is downloaded.

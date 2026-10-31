@@ -1,10 +1,12 @@
 use serde_json::{json, Value};
+use videoplugins_onnx_device::DeviceChoice;
 use videoplugins_plugin_sdk::{Cancel, Failure};
 use videoplugins_sound_reader::{read_audio_region, resample, write_audio_region, Sound};
 use videoplugins_work_files::write_wav_file;
 
 use crate::enhance::{enhance_voice, level_db, split_voice};
 use crate::models::locate_models;
+use crate::network::device_report;
 use crate::tables::read_tables;
 
 use super::read_extract_options_mapper::read_extract_options;
@@ -21,7 +23,9 @@ const MODEL_RATE: u32 = 48_000;
 /// (good for this run only); `voiceDb` and `restDb` say how loud they are. With `files` each track
 /// also comes as a WAV in the result, as `voiceFile` and `restFile`.
 pub fn extract_voice(params: &Value, cancel: &Cancel) -> Result<Value, Failure> {
-    let options = read_extract_options(params)?;
+    let mut options = read_extract_options(params)?;
+    // A call that asked for `auto` runs where the host grants; the default stays the processor.
+    options.device = DeviceChoice::resolve(options.device, cancel.granted_device());
     let media = params
         .get("media")
         .ok_or_else(|| Failure::status(400, "media is missing: give a video"))?;
@@ -61,7 +65,13 @@ pub fn extract_voice(params: &Value, cancel: &Cancel) -> Result<Value, Failure> 
     })?;
     let tables = read_tables(&table_bytes).map_err(|message| Failure::status(422, message))?;
 
-    let enhanced = enhance_voice(&sound.samples, &tables, &paths.network, cancel)?;
+    let enhanced = enhance_voice(
+        &sound.samples,
+        &tables,
+        &paths.network,
+        options.device,
+        cancel,
+    )?;
     let (voice, rest) = split_voice(&sound.samples, &enhanced, options.keep);
 
     let track = |samples: Vec<f32>| Sound {
@@ -81,6 +91,7 @@ pub fn extract_voice(params: &Value, cancel: &Cancel) -> Result<Value, Failure> 
         "voiceDb": round(voice_db),
         "restDb": round(rest_db),
         "durationMs": sound.duration_ms(),
+        "device": device_report().map(|report| report.to_value()),
     });
     if options.rest {
         result["rest"] = write("rest", &rest)?;
