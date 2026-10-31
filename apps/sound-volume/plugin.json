@@ -148,6 +148,11 @@
                   "type": "number",
                   "description": "How loud it sounds on average, in dB relative to full scale (0 is the loudest, -100 is silence)."
                 },
+                "value": {
+                  "title": "Value",
+                  "type": "number",
+                  "description": "The same as rmsDb, under the name every series has."
+                },
                 "peakDb": {
                   "title": "Loudest instant",
                   "type": "number",
@@ -176,8 +181,12 @@
                 "startMs",
                 "endMs",
                 "rmsDb",
-                "peakDb"
+                "peakDb",
+                "value"
               ]
+            },
+            "x-ui": {
+              "type": "series"
             }
           },
           "summary": {
@@ -375,6 +384,9 @@
                 "endMs",
                 "durationMs"
               ]
+            },
+            "x-ui": {
+              "type": "timed"
             }
           },
           "totalSilenceMs": {

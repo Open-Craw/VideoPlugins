@@ -232,6 +232,9 @@
                 "text",
                 "confidence"
               ]
+            },
+            "x-ui": {
+              "type": "timedText"
             }
           }
         },

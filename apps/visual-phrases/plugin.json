@@ -147,6 +147,11 @@
                   "type": "string",
                   "description": "The phrase as it was given, without the spaces round it."
                 },
+                "label": {
+                  "title": "Label",
+                  "type": "string",
+                  "description": "The same as phrase, under the name every timed label has."
+                },
                 "startMs": {
                   "title": "First shown",
                   "type": "integer",
@@ -209,8 +214,12 @@
                 "endMs",
                 "confidence",
                 "samples",
-                "picture"
+                "picture",
+                "label"
               ]
+            },
+            "x-ui": {
+              "type": "timedLabel"
             }
           },
           "samples": {

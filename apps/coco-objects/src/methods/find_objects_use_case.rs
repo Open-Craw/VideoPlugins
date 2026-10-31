@@ -112,6 +112,7 @@ pub fn find_objects(params: &Value, cancel: &Cancel) -> Result<Value, Failure> {
         draw_boxes(&mut picture, video.width, video.height, &boxes, 2);
         described.push(json!({
             "class": COCO_CLASSES[appearance.key],
+            "label": COCO_CLASSES[appearance.key],
             "startMs": appearance.start_ms,
             "endMs": appearance.end_ms,
             "confidence": (f64::from(appearance.confidence) * 1000.0).round() / 1000.0,

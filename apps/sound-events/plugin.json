@@ -1282,6 +1282,9 @@
                 "confidence",
                 "frames"
               ]
+            },
+            "x-ui": {
+              "type": "timedLabel"
             }
           },
           "frames": {

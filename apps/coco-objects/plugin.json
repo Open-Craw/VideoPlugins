@@ -325,6 +325,11 @@
                     "toothbrush"
                   ]
                 },
+                "label": {
+                  "title": "Label",
+                  "type": "string",
+                  "description": "The same as class, under the name every timed label has."
+                },
                 "startMs": {
                   "title": "First seen",
                   "type": "integer",
@@ -394,8 +399,12 @@
                 "confidence",
                 "peakCount",
                 "samples",
-                "picture"
+                "picture",
+                "label"
               ]
+            },
+            "x-ui": {
+              "type": "timedLabel"
             }
           },
           "samples": {

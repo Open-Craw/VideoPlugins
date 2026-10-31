@@ -196,6 +196,12 @@ When VideoCraw finds graphics cards, or the person running asks for a device, it
 
 The person running chooses with the environment variable `VIDEOCRAW_GPU` (`auto`, `cpu`, `gpu` or `gpu:N`; `cpu` runs every model on the processor). Plugins written with the SDK of this repository get the grant from `Cancel::granted_device()`, and `DeviceChoice::resolve` of the `onnx-device` library applies the rule above. `coco-objects` and `video-upscale` run on the grant by default (measured on an RX 7900 XT: `x4plus` and `general-x4v3` are about 3 to 10 times faster than on the CPU). `visual-phrases`, `sound-events` and `voice-extractor` take the grant only when a call asks for `auto`: their default stays the CPU, because the int8 numbers of `visual-phrases` differ on a card, `sound-events` is no faster there, and `voice-extractor` (a network that works one frame after another) is about 20 times slower there (46 s against 2.4 s for 219 s of sound).
 
+## Naming the shape of an output
+
+An output can go to any input that needs less than the output gives: each required field of the input must exist in the output with a fitting type, and extra fields are allowed. The id of a type only names it. Put `x-ui.type` on a property of an input or an output to say that its value has a type. On a list, the id names the items.
+
+The core owns four base types: `timed` (`startMs`, `endMs`), `timedText` (adds `text`), `timedLabel` (adds `label`, and `confidence` when there is one) and `series` (adds `value`). Use these field names so plugins fit each other. To name a shape of your own, list it under `types` in `plugin.json` with an id `namespace/name`; a bare word is reserved. The same id with two shapes in two plugins is a load error. `videocraw actions --json` gives the ids each output fits as `satisfies`. The core reads only `type`, `properties`, `required`, `items` and `enum`.
+
 ## Using one in a recipe
 
 ```json

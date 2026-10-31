@@ -22,6 +22,7 @@ impl VolumeWindow {
             "startMs": self.start_ms,
             "endMs": self.end_ms,
             "rmsDb": round_db(self.rms_db),
+            "value": round_db(self.rms_db),
             "peakDb": round_db(self.peak_db),
         });
         if let Some(bands) = self.bands {
@@ -59,7 +60,7 @@ mod tests {
         };
         assert_eq!(
             window.to_value(),
-            json!({ "startMs": 1000, "endMs": 2000, "rmsDb": -12.3, "peakDb": -3.0,
+            json!({ "startMs": 1000, "endMs": 2000, "rmsDb": -12.3, "value": -12.3, "peakDb": -3.0,
                     "bands": { "low": -20.0, "mid": -13.0, "high": -100.0 } })
         );
         let plain = VolumeWindow {

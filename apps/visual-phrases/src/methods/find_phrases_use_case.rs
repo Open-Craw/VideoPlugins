@@ -114,6 +114,7 @@ pub fn find_phrases(params: &Value, cancel: &Cancel) -> Result<Value, Failure> {
             .ok_or_else(|| Failure::status(500, "a picture of the video went missing"))?;
         described.push(json!({
             "phrase": options.phrases[appearance.key],
+            "label": options.phrases[appearance.key],
             "startMs": appearance.start_ms,
             "endMs": appearance.end_ms,
             "confidence": (f64::from(appearance.confidence) * 1000.0).round() / 1000.0,
