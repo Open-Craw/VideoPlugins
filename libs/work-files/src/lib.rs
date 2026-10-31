@@ -7,6 +7,7 @@ mod names;
 mod png;
 mod wav;
 
+pub use names::unique_work_file_name;
 pub use png::write_png_file;
 pub use wav::write_wav_file;
 

@@ -1687,6 +1687,7 @@ dependencies = [
  "ort",
  "serde_json",
  "videoplugins-model-cache",
+ "videoplugins-onnx-device",
  "videoplugins-plugin-sdk",
  "videoplugins-sound-reader",
  "videoplugins-work-files",
@@ -1730,6 +1731,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "videoplugins-video-upscale"
+version = "0.0.0"
+dependencies = [
+ "ort",
+ "serde_json",
+ "videoplugins-frame-reader",
+ "videoplugins-model-cache",
+ "videoplugins-onnx-device",
+ "videoplugins-plugin-sdk",
+ "videoplugins-work-files",
+]
+
+[[package]]
 name = "videoplugins-visual-phrases"
 version = "0.0.0"
 dependencies = [
@@ -1752,6 +1766,7 @@ dependencies = [
  "realfft",
  "serde_json",
  "videoplugins-model-cache",
+ "videoplugins-onnx-device",
  "videoplugins-plugin-sdk",
  "videoplugins-sound-reader",
  "videoplugins-work-files",

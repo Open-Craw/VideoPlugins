@@ -73,6 +73,11 @@ build = "sh tools/pack-plugin.sh coco-objects"
 assets = ["out/coco-objects-*.vcw"]
 platforms = ["windows-x64", "macos-arm64", "macos-x64", "linux-x64"]
 
+[projects.video-upscale.release]
+build = "sh tools/pack-plugin.sh video-upscale"
+assets = ["out/video-upscale-*.vcw"]
+platforms = ["windows-x64", "macos-arm64", "macos-x64", "linux-x64"]
+
 [projects.music-sync.release]
 build = "sh tools/pack-plugin.sh music-sync"
 assets = ["out/music-sync-*.vcw"]
